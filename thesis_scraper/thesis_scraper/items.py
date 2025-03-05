@@ -6,7 +6,11 @@
 import scrapy
 
 
-class ThesisScraperItem(scrapy.Item):
+class BaseItem(scrapy.Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
-    pass
+    name = scrapy.Field()
+    file_urls = scrapy.Field()
+    files = scrapy.Field()
+    scraped_at = scrapy.Field()
+    spider_name = scrapy.Field()
