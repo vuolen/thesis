@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 scrapy = "*"
 scrapyd = "*"
-scrapyd-client = "==1.2.3"
+scrapyd-client = "*"
 
 [dev-packages]
 

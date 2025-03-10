@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "2e2e3fa890398ad75b77b375b14a0129c4eb9aef9241c45c7d1bae12460bd8d2"
+            "sha256": "627db7bf189c941bd937b7ac3a03cc075918110a8af0413d0e699fa5d67acadd"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -491,6 +491,14 @@
             "markers": "python_version >= '3.9'",
             "version": "==1.10.0"
         },
+        "pip": {
+            "hashes": [
+                "sha256:88f96547ea48b940a3a385494e181e29fb8637898f88d88737c5049780f196ea",
+                "sha256:c46efd13b6aa8279f33f2864459c8ce587ea6a1a59ee20de055868d8f7688f7f"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==25.0.1"
+        },
         "protego": {
             "hashes": [
                 "sha256:37640bc0ebe37572d624453a21381d05e9d86e44f89ff1e81794d185a0491666",
@@ -581,12 +589,12 @@
         },
         "scrapyd-client": {
             "hashes": [
-                "sha256:beeab9310f1ff942978ca472e4ccdc88648cfde3c33734a11337a93514a43859",
-                "sha256:fef27cc0d8bf54cbd03467250fb0705635733de81a577b0ba00c739c2d96c894"
+                "sha256:0a972c182aedd05c9417e3aa9ea168a02cc305cef9a33d10cca3be67701473da",
+                "sha256:2e4eb4aa398650cacc399593eb49c3953ad45f323ce773449912945765878ed1"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.6'",
-            "version": "==1.2.3"
+            "version": "==2.0.2"
         },
         "service-identity": {
             "hashes": [
@@ -598,11 +606,11 @@
         },
         "setuptools": {
             "hashes": [
-                "sha256:4880473a969e5f23f2a2be3646b2dfd84af9028716d398e46192f84bc36900d2",
-                "sha256:558e47c15f1811c1fa7adbd0096669bf76c1d3f433f58324df69f3f5ecac4e8f"
+                "sha256:199466a166ff664970d0ee145839f5582cb9bca7a0a3a2e795b6a9cb2308e9c6",
+                "sha256:43b4ee60e10b0d0ee98ad11918e114c70701bc6051662a9a675a0496c1a158f4"
             ],
             "markers": "python_version >= '3.9'",
-            "version": "==75.8.2"
+            "version": "==76.0.0"
         },
         "tldextract": {
             "hashes": [

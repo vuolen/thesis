@@ -12,7 +12,12 @@ BOT_NAME = "thesis_scraper"
 SPIDER_MODULES = ["thesis_scraper.spiders"]
 NEWSPIDER_MODULE = "thesis_scraper.spiders"
 
-ITEM_PIPELINES = {"thesis_scraper.pipelines.ThesisScraperPipeline": 1}
+ITEM_PIPELINES = {
+    "thesis_scraper.pipelines.PreProcessPipeline": 1,
+    "thesis_scraper.pipelines.DeduplicationPipeline": 2,
+    "thesis_scraper.pipelines.DownloadFilesPipeline": 3,
+    "thesis_scraper.pipelines.ExportPipeline": 4,
+}
 FILES_STORE = "./scraped"
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -94,9 +99,3 @@ AUTOTHROTTLE_ENABLED = True
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
-FEEDS = {
-    "items.json": {
-        "format": "json",
-        "encoding": "utf-8",
-    }
-}
