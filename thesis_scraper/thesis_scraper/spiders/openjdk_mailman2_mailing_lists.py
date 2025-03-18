@@ -1,4 +1,4 @@
-from thesis_scraper.spiders.mailman2spider import Mailman2Spider
+from thesis_scraper.spiders.mailman_spiders import Mailman2Spider
 
 class OpenJDKMailman2MailingListsSpider(Mailman2Spider):
     name = "openjdk-mailman2-mailing-lists"

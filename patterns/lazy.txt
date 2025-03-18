@@ -1,0 +1,7 @@
+
+lazy evaluation
+lazy evaluated
+lazily evaluated
+call-by-need
+non-strict evaluation
+non-strictly evaluated

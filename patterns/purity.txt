@@ -1,0 +1,4 @@
+pure function
+purity
+referential transparency
+side-effect free function

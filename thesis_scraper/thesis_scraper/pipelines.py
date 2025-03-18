@@ -7,14 +7,13 @@ import datetime
 import os
 import hashlib
 import json
-from scrapy.exporters import JsonLinesItemExporter
 from scrapy.utils.serialize import ScrapyJSONEncoder 
 from scrapy.pipelines.files import FilesPipeline, FSFilesStore
-from scrapy.exceptions import DropItem
+from scrapy.exceptions import NotConfigured
 from thesis_scraper.settings import FILES_STORE
 
 def jsons_item(item):
-    encoder = ScrapyJSONEncoder()
+    encoder = ScrapyJSONEncoder(indent=4)
     return encoder.encode(item)
 
 def hash_item(item):
@@ -75,7 +74,7 @@ class DownloadFilesPipeline(FilesPipeline):
         ext = ""
         if response:
             content_type = response.headers.get("Content-Type").decode()
-            ext = "." + content_type.split("/")[1]
+            ext = "." + content_type.split("/")[1].split(";")[0]
         id = hashlib.sha1(request.url.encode()).hexdigest()
         return os.path.join(item["spider_name"], str(item["id"]), id) + ext
 

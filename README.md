@@ -16,7 +16,13 @@ Scrapy project for getting relevant material for my thesis.
 ### Java
 
 - JEPs (https://openjdk.org/jeps/0)
+- OpenJDK mailing lists
+- Specifications (https://docs.oracle.com/javase/specs/)
 - //JSRs (https://www.jcp.org/en/jsr/all)
-- //Specifications (https://docs.oracle.com/javase/specs/)
 
-### S
+### C++
+
+- Working group papers
+- Emailing lists
+  - Google groups manually searched?
+  - Modern mailing lists scraped, after 2019

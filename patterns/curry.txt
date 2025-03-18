@@ -1,0 +1,5 @@
+currying
+curried
+curryed
+curry
+partial application

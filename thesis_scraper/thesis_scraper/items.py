@@ -11,6 +11,7 @@ class BaseItem(scrapy.Item):
     # name = scrapy.Field()
     id = scrapy.Field()
     name = scrapy.Field()
+    payload = scrapy.Field()
     file_urls = scrapy.Field()
     files = scrapy.Field()
     scraped_at = scrapy.Field()

@@ -1,4 +1,5 @@
 thesis_scraper/scraped
+thesis_scraper/.scrapy
 thesis_scraper/build
 thesis_scraper/dbs
 thesis_scraper/twistd.pid
