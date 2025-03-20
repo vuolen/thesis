@@ -1,4 +1,3 @@
-
 lazy evaluation
 lazy evaluated
 lazily evaluated

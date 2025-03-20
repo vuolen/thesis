@@ -21,6 +21,8 @@ ITEM_PIPELINES = {
 FILES_STORE = "./scraped"
 HTTPCACHE_ENABLED = True
 
+LOG_LEVEL="INFO"
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = "thesis_scraper (+https://github.com/vuolen/thesis)"
 

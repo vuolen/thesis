@@ -12,14 +12,15 @@ class CppMailingListsSpider(scrapy.Spider):
             yield response.follow(f"{BASE_URL}/{listName.lower()}/", self.parseList)
 
     def parseList(self, response):
-        for link in response.css("a[href$='date.php']"):
-            yield response.follow(response.urljoin(link.attrib['href']), self.parsePeriod)
+        for link in response.css("a[href$='subject.php']"):
+            yield response.follow(response.urljoin(link.attrib['href']), self.parseSubject)
 
-    def parsePeriod(self, response):
-        links = response.css(".messages-list a::attr(href)").extract()
-        year = response.url.split("/")[-3]
-        month = response.url.split("/")[-2]
-        yield BaseItem(
-            name=f"{year}-{month}",
-            file_urls=[response.urljoin(link) for link in links]
-        )
+    def parseSubject(self, response):
+        topics = response.css(".messages-list h2::text").extract()
+        linkLists = response.css(".messages-list ul")
+        for topic, linkList in zip(topics, linkLists):
+            links = linkList.css("a::attr(href)").extract()
+            yield BaseItem(
+                name=topic,
+                file_urls=[response.urljoin(link) for link in links]
+            )

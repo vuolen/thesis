@@ -1,9 +1,11 @@
 import scrapy
 import datetime
 import gzip
+import numpy as np
 from thesis_scraper.items import BaseItem
 from email import message_from_bytes
 from email.utils import parsedate_to_datetime
+from disjoint_set import DisjointSet
 
 class MailmanSpider(scrapy.Spider):
 
@@ -12,7 +14,7 @@ class MailmanSpider(scrapy.Spider):
         return {
             "listName": listName,
             "messages": {},
-            "threads": {},
+            "threads": None,
             "digest_counter": 0,
             "total_digests": 0
         }
@@ -26,25 +28,25 @@ class MailmanSpider(scrapy.Spider):
         for message in data.split(b"From "):
             msg = message_from_bytes(b"From " + message)
             state["messages"][msg["Message-ID"]] = msg
-            linkedIds = msg.get("References", "").split() + msg.get("In-Reply-To", "").split()
-            linkedThreads = set([state["threads"][linkedId] for linkedId in linkedIds if linkedId in state["threads"]])
 
-            if len(linkedThreads) == 0:
-                 state["threads"][msg["Message-ID"]] = len(state["threads"])
-            else:
-                # merge all linked threads to the first one
-                newThread = linkedThreads.pop()
-                state["threads"][msg["Message-ID"]] = newThread
-                for linkedId in linkedIds:
-                    state["threads"][linkedId] = newThread
         
         state["digest_counter"] += 1
         if state["digest_counter"] == state["total_digests"]:
             yield from self.yieldThreads(state)
 
     def yieldThreads(self, state):
-        for thread in set(state["threads"].values()):
-            msgs = [state["messages"][msgId] for msgId in state["messages"] if state["threads"][msgId] == thread]
+
+        state["threads"] = DisjointSet.from_iterable(state["messages"].keys())
+
+        for msgId, msg in state["messages"].items():
+            linkedIds = msg.get("In-Reply-To", "").split()
+            linkedIds = [msgId for msgId in linkedIds if msgId in state["messages"]]
+
+            for linkedId in linkedIds:
+                state["threads"].union(linkedId, msgId)
+
+        for thread in list(state["threads"]):
+            msgs = [state["messages"][msgId] for msgId in thread if msgId in state["messages"]]
 
             def dateKey(msg):
                 msgDate = parsedate_to_datetime(msg.get("Date")) if msg.get("Date") else datetime.datetime.max
@@ -55,7 +57,7 @@ class MailmanSpider(scrapy.Spider):
             msgs.sort(key=dateKey)
 
             yield BaseItem(
-                name=msgs[0]["Subject"],
+                name=str(msgs[0]["Subject"]),
                 payload={
                     "listName": state["listName"],
                     "msgs": [msg.as_string() for msg in msgs],
@@ -66,10 +68,13 @@ class MailmanSpider(scrapy.Spider):
 
 class Mailman2Spider(MailmanSpider):
     def parse(self, response):
+        priority = 0
         for listLink in response.css('table tr td a[href^="listinfo"]'):
             listName = listLink.css("::text").get()
             archiveLink = listLink.attrib["href"].replace("listinfo", "/pipermail")
-            yield response.follow(archiveLink, self.parseArchive, cb_kwargs=dict(listName=listName))
+            # parse a single list before moving on to the next
+            yield response.follow(archiveLink, self.parseArchive, cb_kwargs=dict(listName=listName), priority=priority)
+            priority += 1
 
     def parseArchive(self, response, listName):
         state = self.emptyState(listName)

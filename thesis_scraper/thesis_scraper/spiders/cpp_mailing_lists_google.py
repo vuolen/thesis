@@ -2,8 +2,8 @@ import scrapy
 from thesis_scraper.items import BaseItem
 
 class CppMailingListsSpider(scrapy.Spider):
-    name = "cpp-mailing-lists"
-    allowed_domains = ["lists.isocpp.org"]
+    name = "cpp-mailing-lists-google"
+    allowed_domains = ["groups.google.com"]
     start_urls = [
         "https://groups.google.com/a/isocpp.org/g/std-proposals"
     ]

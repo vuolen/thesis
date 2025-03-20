@@ -6,6 +6,7 @@ SEARCH_DIR = "searches"
 SCRAPE_DIR = "thesis_scraper/scraped"
 PATTERN_DIR = "patterns"
 
+
 async def run_command(command):
     proc = await asyncio.create_subprocess_shell(
         command,
@@ -24,36 +25,59 @@ async def pdfgrep_search(scrape_dir, pattern_file):
 
 async def zgrep_search(scrape_dir, pattern_file):
     print(f"zgrepping {scrape_dir}, {pattern_file}")
-    stdout, stderr = await run_command(f"zgrep -rioHEa -m 1 -f {os.path.join(PATTERN_DIR, pattern_file)} {os.path.join(SCRAPE_DIR, scrape_dir)}")
+    stdout, stderr = await run_command(f"zgrep -rioHEaF -m 1 -f {os.path.join(PATTERN_DIR, pattern_file)} {os.path.join(SCRAPE_DIR, scrape_dir)}")
     return stdout, stderr
 
+async def ripgrep_search(scrape_dir, pattern_file):
+    print(f"ripgrepping {scrape_dir}, {pattern_file}")
+    stdout, stderr = await run_command(f"rg -iHF --count-matches -f {os.path.join(PATTERN_DIR, pattern_file)} {os.path.join(SCRAPE_DIR, scrape_dir)}")
+    lines = filter(lambda line: line != b"", stdout.split(b"\n"))
+    lines = sorted(lines, key=lambda line: int(line.split(b":")[1]), reverse=True)
+    stdout = b"\n".join(lines)
+    return stdout, stderr, "ripgrep"
+
+SEARCHES = {
+    "python-mailman2-mailing-lists": [ripgrep_search],
+    "python-mailman3-mailing-lists": [ripgrep_search],
+    "openjdk-mailman2-mailing-lists": [ripgrep_search]
+}
+
 async def search(collection, pattern):
-    zstdout, zstderr = await zgrep_search(collection, pattern + ".txt")
-    pdfstdout, pdfstderr = await pdfgrep_search(collection, pattern + ".txt")
 
-    print(collection, pattern)
-    if zstderr == b"" and pdfstderr == b"":
-        print("\tOkay!")
-        output_dir = os.path.join(SEARCH_DIR, collection, pattern)
-        os.makedirs(output_dir, exist_ok=True)
-        with open(os.path.join(output_dir, "zgrep.txt"), "wb") as f:
-            f.write(zstdout)
-        with open(os.path.join(output_dir, "pdfgrep.txt"), "wb") as f:
-            f.write(pdfstdout)
-    else:
-        print("\tError!")
-        print(zstderr)
-        print(pdfstderr)
+    searches = SEARCHES.get(collection, [])
+
+    for search in searches:
+        stdout, stderr, commandName = await search(collection, pattern + ".txt")
+
+        if stderr == b"":
+            output_dir = os.path.join(SEARCH_DIR, collection, pattern)
+            os.makedirs(output_dir, exist_ok=True)
+            with open(os.path.join(output_dir, f"{commandName}.txt"), "wb") as f:
+                f.write(stdout)
+        else:
+            print(stderr)
 
 
-async def main():
-    patterns = [file.split(".")[0] for file in os.listdir(PATTERN_DIR)]
-    collections = os.listdir(SCRAPE_DIR)
+async def main(patterns=None, collections=None):
+    all_patterns = [file.split(".")[0] for file in os.listdir(PATTERN_DIR)]
+    all_collections = os.listdir(SCRAPE_DIR)
+
+    patterns = [pattern for pattern in patterns if pattern in all_patterns] if patterns else all_patterns
+    collections = [collection for collection in collections if collection in all_collections] if collections else all_collections
+
+    print("Searching for patterns", patterns, "in collections", collections)
     searches = [search(collection, pattern) for pattern in patterns for collection in collections]
     #pdfgreps = [pdfgrep_search(collection, pattern) for pattern in patterns for collection in collections]
     await asyncio.gather(*searches)
 
 
+import argparse
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(description="Search for patterns in collections")
+    parser.add_argument("--patterns", type=str, help="The patterns to search for")
+    parser.add_argument("--collections", type=str, help="The collections to search in")
+    args = parser.parse_args()
+    patterns = args.patterns.split(",") if args.patterns else None
+    collections = args.collections.split(",") if args.collections else None
+    asyncio.run(main(patterns, collections))
