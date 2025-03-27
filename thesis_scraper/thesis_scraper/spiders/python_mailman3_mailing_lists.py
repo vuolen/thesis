@@ -7,7 +7,7 @@ class PythonMailman3MailingListsSpider(Mailman3Spider):
     start_urls = ["https://mail.python.org/mailman3/lists/?count=200"]
 
     custom_settings = {
-        **Mailman3Spider.custom_settings,
+        **(Mailman3Spider.custom_settings or {}),
         # Do not set this to False when running the spider
         "ROBOTSTXT_OBEY": False,
     }
