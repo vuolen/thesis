@@ -113,54 +113,83 @@ class Mailman3Spider(MailmanSpider):
     # Use fixed end date instead of today to help http caching
     END_DATE = datetime.date(2026, 1, 1)
 
+    @staticmethod
+    def emptyState(listName):
+        superState = MailmanSpider.emptyState(listName)
+        return {
+            **superState,
+            "next_requests": []
+        }
+
+    @staticmethod
+    def replaceNextRequests(request, nextRequests):
+        return request.replace(cb_kwargs={
+            **request.cb_kwargs,
+            "state": {
+                **request.cb_kwargs["state"],
+                "next_requests": nextRequests
+            }
+        })
+    
+    @staticmethod
+    def popNextRequest(nextRequests):
+        req = nextRequests[0]
+        return Mailman3Spider.replaceNextRequests(req, nextRequests[1:])
+
     def parse(self, response):
-        priority = 0
         for tableCell in response.css('table tr td::text'):
             if tableCell.extract().endswith("@python.org"):
                 listEmail = tableCell.extract().replace("list", "archive")
                 archiveLink = f"https://mail.python.org/archives/list/{listEmail}/export/{listEmail}.mbox.gz"
                 state = self.emptyState(listEmail)
                 range = (datetime.date(1990, 1, 1), self.END_DATE)
-                yield response.follow(archiveLink, self.parseRange, cb_kwargs=dict(listName=listEmail, state=state, range=range), errback=self.onError, priority=priority)
-                priority -= 1
+                yield response.follow(archiveLink, self.parseRange, cb_kwargs=dict(listName=listEmail, state=state, range=range), errback=self.onError)
 
     def parseRange(self, response, listName, state, range):
-        latency = response.meta.get("download_latency", 0)
+        latency = response.meta.get("download_latency", None)
         self.logger.info(f"Downloaded {listName} from {range[0]} to {range[1]} in {latency} seconds")
         self.parseDigestFile(response, state)
-        req = response.request
 
-        if range[1] == self.END_DATE:
+        self.logger.info(f"{len(state["next_requests"])} requests left for {listName}")
+
+        if len(state["next_requests"]) > 0:
+            yield Mailman3Spider.popNextRequest(state["next_requests"])
+        else:
             yield from self.yieldThreads(state)
-            return
 
-        start = range[1]
-        period = (range[1] - range[0])
-        end = min(start + period, self.END_DATE)
-
-        base_url = urljoin(req.url, urlparse(req.url).path)
-        cb_kwargs = {**req.cb_kwargs, "range": (start, end)}
-        yield req.replace(
-            url=base_url + f"?start={start.strftime('%Y-%m-%d')}&end={end.strftime('%Y-%m-%d')}", 
-            cb_kwargs=cb_kwargs)
 
     def onError(self, failure):
+        latency = failure.request.meta.get("download_latency", None)
         if failure.check(HttpError):
             if failure.value.response.status != 400:
                 return
 
-        self.logger.info(f"Failed to download {failure.request.url} with {failure.value}, halving interval")
-
         start = failure.request.cb_kwargs["range"][0]
         end = failure.request.cb_kwargs["range"][1]
+        newInterval = (end - start) / 2
 
-        newEnd = min(start + (end - start) / 2, self.END_DATE)
+        self.logger.info("".join([
+            f"Failed to download {failure.request.url} ",
+            f"({latency} seconds)" if latency else "(cached), ",
+            "splitting into two"
+        ]))
 
         base_url = urljoin(failure.request.url, urlparse(failure.request.url).path)
-        cb_kwargs = {**failure.request.cb_kwargs, "range": (start, newEnd)}
-        yield failure.request.replace(
-            url=base_url + f"?start={start.strftime('%Y-%m-%d')}&end={end.strftime('%Y-%m-%d')}",
-            cb_kwargs=cb_kwargs)    
+
+
+        secondHalf = failure.request.replace(
+            url = base_url + f"?start={(start + newInterval).strftime('%Y-%m-%d')}&end={end.strftime('%Y-%m-%d')}",
+            cb_kwargs = {**failure.request.cb_kwargs, "range": (start + newInterval, end)}
+        )
+
+        firstHalf = failure.request.replace(
+            url = base_url + f"?start={start.strftime('%Y-%m-%d')}&end={(start + newInterval).strftime('%Y-%m-%d')}",
+            cb_kwargs = {**failure.request.cb_kwargs, "range": (start, start + newInterval)}
+        )
+
+        nextRequests = [firstHalf, secondHalf] + failure.request.cb_kwargs["state"]["next_requests"]
+
+        yield Mailman3Spider.popNextRequest(nextRequests)
 
         
 
