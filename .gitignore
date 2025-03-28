@@ -7,6 +7,7 @@ thesis_scraper/eggs
 thesis_scraper/logs
 thesis_scraper/project.egg-info
 thesis_scraper/items.json
+final_data
 
 # any pycache
 __pycache__/

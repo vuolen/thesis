@@ -3,12 +3,11 @@ import os
 import datetime
 import gzip
 import mailbox
-import calendar
 import tempfile
+import email
 from scrapy.spidermiddlewares.httperror import HttpError
 from urllib.parse import urljoin, urlparse
 from thesis_scraper.items import BaseItem
-from email import message_from_bytes
 from email.utils import parsedate_to_datetime
 from disjoint_set import DisjointSet
 
@@ -35,7 +34,7 @@ class MailmanSpider(scrapy.Spider):
             data = gzip.decompress(data)
 
         with tempfile.NamedTemporaryFile("wb", delete_on_close=False, dir=TMP_DIR) as tmp:
-            tmp.write(data.decode("utf-8").encode("ascii", "backslashreplace"))
+            tmp.write(data.decode("ascii", "backslashreplace").encode("ascii", "backslashreplace"))
             tmp.close()
             mbox = mailbox.mbox(tmp.name)
             for key in mbox.iterkeys():
