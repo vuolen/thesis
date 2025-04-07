@@ -51,7 +51,7 @@ class MailmanSpider(scrapy.Spider):
         state["threads"] = DisjointSet.from_iterable(state["messages"].keys())
 
         for msgId, msg in state["messages"].items():
-            linkedIds = str(msg.get("In-Reply-To", "")).split()
+            linkedIds = str(msg.get("In-Reply-To", "")).split() + str(msg.get("References", "")).split()
             linkedIds = [msgId for msgId in linkedIds if msgId in state["messages"]]
 
             for linkedId in linkedIds:
