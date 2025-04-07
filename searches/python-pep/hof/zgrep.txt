@@ -1,3 +1,0 @@
-thesis_scraper/scraped/python-pep/d5f07aa229a6d309464b8dd1107d7ed28d5e5e13/9caecec9c2eb8344dc5acd20853f0e71ab5f283e.html:higher-order function
-thesis_scraper/scraped/python-pep/9ecfdb84e2e1e8ebc8f9975727454af3d8c7a071/47292b13f5ecd656f683cad461798f388ae837dd.html:higher order function
-thesis_scraper/scraped/python-pep/4a42074f22931a3c629fd0ff6c960d96a69635a7/ce514eed216ace30f55e18b6b74bdb3e561266ff.html:higher-order function

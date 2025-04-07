@@ -3,7 +3,7 @@ import os
 import sys
 
 SEARCH_DIR = "searches"
-SCRAPE_DIR = "thesis_scraper/scraped"
+SCRAPE_DIR = "final_data/thesis_scraper/scraped"
 PATTERN_DIR = "patterns"
 
 
@@ -20,13 +20,13 @@ async def run_command(command):
 
 async def pdfgrep_search(scrape_dir, pattern_file):
     print(f"pdfgrepping {scrape_dir}, {pattern_file}")
-    stdout, stderr = await run_command(f"pdfgrep -rioHP -m 1 -f {os.path.join(PATTERN_DIR, pattern_file)} {os.path.join(SCRAPE_DIR, scrape_dir)}")
-    return stdout, stderr
+    stdout, stderr = await run_command(f"pdfgrep -riHF --count -f {os.path.join(PATTERN_DIR, pattern_file)} {os.path.join(SCRAPE_DIR, scrape_dir)}")
+    return stdout, stderr, "pdfgrep"
 
 async def zgrep_search(scrape_dir, pattern_file):
     print(f"zgrepping {scrape_dir}, {pattern_file}")
-    stdout, stderr = await run_command(f"zgrep -rioHEaF -m 1 -f {os.path.join(PATTERN_DIR, pattern_file)} {os.path.join(SCRAPE_DIR, scrape_dir)}")
-    return stdout, stderr
+    stdout, stderr = await run_command(f"zgrep -riHF --count -f {os.path.join(PATTERN_DIR, pattern_file)} {os.path.join(SCRAPE_DIR, scrape_dir)}")
+    return stdout, stderr, "zgrep"
 
 async def ripgrep_search(scrape_dir, pattern_file):
     print(f"ripgrepping {scrape_dir}, {pattern_file}")
@@ -37,9 +37,17 @@ async def ripgrep_search(scrape_dir, pattern_file):
     return stdout, stderr, "ripgrep"
 
 SEARCHES = {
+    "cpp-mailing-lists": [ripgrep_search],
+    "cpp-papers": [pdfgrep_search, ripgrep_search],
+    "java-jep": [ripgrep_search],
+    "java-specs": [pdfgrep_search],
+    "openjdk-mailman2-mailing-lists": [ripgrep_search],
+    "python-discuss": [ripgrep_search],
+    "python-docs": [zgrep_search],
     "python-mailman2-mailing-lists": [ripgrep_search],
     "python-mailman3-mailing-lists": [ripgrep_search],
-    "openjdk-mailman2-mailing-lists": [ripgrep_search]
+    "python-pep": [ripgrep_search]
+
 }
 
 async def search(collection, pattern):
