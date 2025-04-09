@@ -1,13 +1,8 @@
-thesis_scraper/scraped
-thesis_scraper/.scrapy
-thesis_scraper/build
-thesis_scraper/dbs
-thesis_scraper/twistd.pid
-thesis_scraper/eggs
-thesis_scraper/logs
-thesis_scraper/project.egg-info
-thesis_scraper/items.json
 final_data*
+.scrapy
+.tmp*
+files
+feeds
 
 # any pycache
 __pycache__/
