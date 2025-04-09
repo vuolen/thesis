@@ -1,8 +1,7 @@
 final_data*
 .scrapy
 .tmp*
-files
-feeds
+data
 
 # any pycache
 __pycache__/

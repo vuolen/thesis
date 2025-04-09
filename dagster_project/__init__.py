@@ -32,7 +32,7 @@ def build_collection_asset(spider, parser):
         #settings.set("LOG_LEVEL", "ERROR")
         settings.set("FEEDS", {output_file: {"format": "jsonlines", "overwrite": True}})
         settings.set("FILES_STORE", FILES_DIR)
-        settings.set("HTTPCACHE_ENABLED", True)
+        #settings.set("HTTPCACHE_ENABLED", False)
         process = CrawlerProcess(settings=settings)
         process.crawl(spider)
         process.start()
