@@ -12,8 +12,8 @@ then
 fi
 
 mkdir -p data/feeds data/files data/.dagster_home
-DAGSTER_HOME=$(pwd)/data/.dagster_home
-DAGSTER_FEEDS_DIR=$(pwd)/data/feeds
-DAGSTER_FILES_DIR=$(pwd)/data/files
+export DAGSTER_HOME=$(pwd)/data/.dagster_home
+export DAGSTER_FEEDS_DIR=$(pwd)/data/feeds
+export DAGSTER_FILES_DIR=$(pwd)/data/files
 
 pipenv run dagster dev -m dagster_project --working-directory .
