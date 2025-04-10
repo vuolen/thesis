@@ -4,6 +4,10 @@
 
 Scrapy project for getting relevant material for my thesis.
 
+## Requirements:
+
+- [ripgrep-all](https://github.com/phiresky/ripgrep-all)
+
 ### Python
 
 - Mailing lists
