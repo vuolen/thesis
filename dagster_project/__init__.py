@@ -15,7 +15,7 @@ from scrapy_project.spiders.python_docs import PythonDocsSpider
 from scrapy_project.spiders.python_mailman2_mailing_lists import PythonMailman2MailingListsSpider
 from scrapy_project.spiders.python_mailman3_mailing_lists import PythonMailman3MailingListsSpider
 
-from .matcher import pdfgrepAll, ripgrepAll, zgrepAll
+from .matcher import ripgrepAll
 
 FILES_DIR = os.getenv("FILES_DIR")
 ITEM_FEEDS_DIR = os.getenv("ITEM_FEEDS_DIR")
