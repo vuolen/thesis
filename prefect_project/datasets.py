@@ -128,16 +128,16 @@ def build_collection_flow(spider, parser):
 
 
 spiders = [
-    # (CppPapersSpider, lambda x: x),
-    # (CppMailingListsSpider, lambda x: x),
-    # (JavaJepSpider, lambda x: x),
-    # (JavaSpecsSpider, lambda x: x),
-    # (OpenJDKMailman2MailingListsSpider, parse_threads), 
-    # (PythonDiscussSpider, lambda x: x),
-    # (PythonDocsSpider, lambda x: x),
-    # (PythonMailman2MailingListsSpider, parse_threads),
+    (CppPapersSpider, lambda x: x),
+    (CppMailingListsSpider, lambda x: x),
+    (JavaJepSpider, lambda x: x),
+    (JavaSpecsSpider, lambda x: x),
+    (OpenJDKMailman2MailingListsSpider, parse_threads), 
+    (PythonDiscussSpider, lambda x: x),
+    (PythonDocsSpider, lambda x: x),
+    (PythonMailman2MailingListsSpider, parse_threads),
     (PythonMailman3MailingListsSpider, parse_threads),
-    # (PythonPepSpider, lambda x: x)
+    (PythonPepSpider, lambda x: x)
 ]
 
 # Combine all the flows into one by running each spider in sequence
