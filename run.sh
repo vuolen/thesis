@@ -19,12 +19,14 @@ fi
 
 mkdir -p data/feeds data/files
 
-# if arg is server, run the server else run the script
+# if arg is server, run the server, if deploy, run the deploy script, else echo error
 if [ "$1" == "server" ]; then
+    echo "Running server"
     pipenv run prefect server start
-else if [ "$1" == "deploy" ]; then
+elif [ "$1" == "deploy" ]; then
+    echo "Running deploy"
     pipenv run python -m prefect_project.datasets
 else
-    echo "Please provide a valid argument: server or deploy"
+    echo "Please specify a command: server or deploy"
     exit 1
 fi
