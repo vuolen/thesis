@@ -63,7 +63,7 @@ class Mailman3Spider(scrapy.Spider):
         self.logger.info(f"Downloaded {listName} from {range[0]} to {range[1]} in {latency} seconds")
         self.logger.info(f"{len(next_requests)} requests left for {listName}")
 
-        if len("next_requests") > 0:
+        if len(next_requests) > 0:
             yield Mailman3Spider.popNextRequest(next_requests)
 
     def onError(self, failure):

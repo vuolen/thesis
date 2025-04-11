@@ -2,6 +2,7 @@ final_data*
 .scrapy
 .tmp*
 data
+.prefect
 
 # any pycache
 __pycache__/

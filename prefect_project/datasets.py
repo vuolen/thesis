@@ -128,15 +128,15 @@ def build_collection_flow(spider, parser):
 
 
 spiders = [
-#    (CppPapersSpider, lambda x: x),
-#    (CppMailingListsSpider, lambda x: x),
-   # (JavaJepSpider, lambda x: x),
-  #  (JavaSpecsSpider, lambda x: x),
-    # (OpenJDKMailman2MailingListsSpider, createThreadParser("OpenJDKMailman2MailingLists")),
+    # (CppPapersSpider, lambda x: x),
+    # (CppMailingListsSpider, lambda x: x),
+    # (JavaJepSpider, lambda x: x),
+    # (JavaSpecsSpider, lambda x: x),
+    # (OpenJDKMailman2MailingListsSpider, parse_threads), 
     # (PythonDiscussSpider, lambda x: x),
     # (PythonDocsSpider, lambda x: x),
-    (PythonMailman2MailingListsSpider,  parse_threads)
-    # (PythonMailman3MailingListsSpider, createThreadParser("PythonMailman3MailingLists")),
+    # (PythonMailman2MailingListsSpider, parse_threads),
+    (PythonMailman3MailingListsSpider, parse_threads),
     # (PythonPepSpider, lambda x: x)
 ]
 
@@ -144,8 +144,7 @@ spiders = [
 flows = [build_collection_flow(spider, parser) for spider, parser in spiders]
 
 async def main():
-    for flow in flows:
-        await flow()
+    await asyncio.gather(*[flow() for flow in flows])
 
 if __name__ == "__main__":
     asyncio.run(main())

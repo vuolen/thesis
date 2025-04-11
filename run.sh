@@ -24,6 +24,7 @@ export DAGSTER_FILES_DIR=$(pwd)/data/files
 
 pipenv run prefect config set PREFECT_RESULTS_PERSIST_BY_DEFAULT=true
 pipenv run prefect config set PREFECT_API_URL=http://127.0.0.1:4200/api
-prefect config set PREFECT_LOCAL_STORAGE_PATH='./.prefect/storage'
+pipenv run prefect config set PREFECT_LOCAL_STORAGE_PATH='./.prefect/storage'
 
-pipenv run dagster dev -m dagster_project --working-directory .
+pipenv run prefect server start &
+pipenv run python -m prefect_project.datasets
