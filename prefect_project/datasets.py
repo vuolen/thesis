@@ -20,14 +20,6 @@ from .matcher import ripgrepAll, run_command
 FILES_DIR = os.getenv("FILES_DIR")
 ITEM_FEEDS_DIR = os.getenv("ITEM_FEEDS_DIR")
 
-async def cleanup():
-    print("Terminating running commands")
-    for proc in running_commands:
-        proc.terminate()
-    
-    print("Waiting for running commands to finish")
-    for proc in running_commands:
-        await proc.wait()
 
 @task(cache_policy=DEFAULT)
 async def run_command(cmd):
@@ -125,26 +117,58 @@ def build_collection_flow(spider, parser):
 
     return build_collection
 
+@flow
+def cpp_papers():
+    build_collection_flow(CppPapersSpider, lambda x: x)()
 
-spiders = [
-    (CppPapersSpider, lambda x: x),
-    (CppMailingListsSpider, lambda x: x),
-    (JavaJepSpider, lambda x: x),
-    (JavaSpecsSpider, lambda x: x),
-    (OpenJDKMailman2MailingListsSpider, parse_threads), 
-    (PythonDiscussSpider, lambda x: x),
-    (PythonDocsSpider, lambda x: x),
-    (PythonMailman2MailingListsSpider, parse_threads),
-    (PythonMailman3MailingListsSpider, parse_threads),
-    (PythonPepSpider, lambda x: x)
-]
+@flow
+def cpp_mailing_lists():
+    build_collection_flow(CppMailingListsSpider, lambda x: x)()
 
+@flow
+def java_jep():
+    build_collection_flow(JavaJepSpider, lambda x: x)()
+
+@flow
+def java_specs():
+    build_collection_flow(JavaSpecsSpider, lambda x: x)()
+
+@flow
+def openjdk_mailing_lists():
+    build_collection_flow(OpenJDKMailman2MailingListsSpider, parse_threads)()
+
+@flow
+def python_discuss():
+    build_collection_flow(PythonDiscussSpider, lambda x: x)()
+
+@flow
+def python_docs():
+    build_collection_flow(PythonDocsSpider, lambda x: x)()
+
+@flow
+def python_mailman2_lists():
+    build_collection_flow(PythonMailman2MailingListsSpider, parse_threads)()
+
+@flow
+def python_pep():
+    build_collection_flow(PythonPepSpider, lambda x: x)()
+
+@flow
+def python_mailman3_lists():
+    build_collection_flow(PythonMailman3MailingListsSpider, parse_threads)()
 
 def main():
     deployments = [
-        build_collection_flow(spider, parser)
-            .to_deployment(name=spider.name)
-        for spider, parser in spiders
+        cpp_papers.to_deployment(name="cpp_papers"),
+        cpp_mailing_lists.to_deployment(name="cpp_mailing_lists"),
+        java_jep.to_deployment(name="java_jep"),
+        java_specs.to_deployment(name="java_specs"),
+        openjdk_mailing_lists.to_deployment(name="openjdk_mailing_lists"),
+        python_discuss.to_deployment(name="python_discuss"),
+        python_docs.to_deployment(name="python_docs"),
+        python_mailman2_lists.to_deployment(name="python_mailman2_lists"),
+        python_pep.to_deployment(name="python_pep"),
+        python_mailman3_lists.to_deployment(name="python_mailman3_lists"),
     ]
     serve(*deployments)
 
