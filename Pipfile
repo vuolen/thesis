@@ -8,8 +8,7 @@ scrapy = "*"
 scrapyd = "*"
 scrapyd-client = "*"
 disjoint-set = "*"
-dagster = "*"
-dagster-webserver = "*"
+prefect = "*"
 
 [dev-packages]
 

@@ -75,7 +75,7 @@ async def run_scraper(spider_name: str, output_file: str):
         "scrapy", "crawl", spider_name, "-O", "-:jsonlines",
         "-s", f"FILES_STORE={FILES_DIR}",
         "-s", f"DOWNLOAD_DELAY=1",
-        "-s", f"HTTPCACHE_ENABLED=False",
+        "-s", f"HTTPCACHE_ENABLED=True",
     ]
     output_lines = await run_command(cmd)
     items = []
