@@ -1,8 +1,7 @@
 import os
 import json
 import asyncio
-import atexit
-from prefect import task, flow
+from prefect import task, flow, serve
 from prefect.logging import get_run_logger
 from prefect.cache_policies import DEFAULT 
 from prefect_project.threadparser import parse_threads
@@ -140,11 +139,14 @@ spiders = [
     (PythonPepSpider, lambda x: x)
 ]
 
-# Combine all the flows into one by running each spider in sequence
-flows = [build_collection_flow(spider, parser) for spider, parser in spiders]
 
-async def main():
-    await asyncio.gather(*[flow() for flow in flows])
+def main():
+    deployments = [
+        build_collection_flow(spider, parser)
+            .to_deployment(name=spider.name)
+        for spider, parser in spiders
+    ]
+    serve(*deployments)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
