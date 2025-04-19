@@ -9,6 +9,7 @@ scrapyd = "*"
 scrapyd-client = "*"
 disjoint-set = "*"
 prefect = "*"
+aiohttp = "*"
 
 [dev-packages]
 

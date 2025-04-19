@@ -3,6 +3,12 @@ final_data*
 .tmp*
 data
 .prefect
+build
+dbs
+eggs
+logs
+project.egg-info
+twistd.pid
 
 # any pycache
 __pycache__/
