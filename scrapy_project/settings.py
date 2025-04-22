@@ -14,13 +14,15 @@ NEWSPIDER_MODULE = "scrapy_project.spiders"
 
 MEDIA_ALLOW_REDIRECTS = True
 ITEM_PIPELINES = {
-    "scrapy.pipelines.files.FilesPipeline": 1
-#     "thesis_scraper.pipelines.PreProcessPipeline": 1,
+    "scrapy_project.pipelines.PreProcessPipeline": 1,
+    "scrapy_project.pipelines.CustomFilesPipeline": 2,
 #     "thesis_scraper.pipelines.DeduplicationPipeline": 2,
 #     "thesis_scraper.pipelines.DownloadFilesPipeline": 3,
 #     "thesis_scraper.pipelines.ExportPipeline": 4,
 }
 HTTPCACHE_ENABLED = True
+
+FILES_STORE = "data/files"
 
 LOG_LEVEL="INFO"
 
@@ -36,7 +38,7 @@ CONCURRENT_REQUESTS = 32
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-DOWNLOAD_DELAY = 0.3
+DOWNLOAD_DELAY = 5
 AUTOTHROTTLE_ENABLED = True
 AUTOTHROTTLE_TARGET_CONCURRENCY = 32
 # The download delay setting will honor only one of:

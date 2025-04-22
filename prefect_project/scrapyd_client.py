@@ -30,13 +30,14 @@ async def is_spider_running(spider_name):
     return False
 
 
-async def schedule_spider(spider_name, settings):
+async def schedule_spider(spider_name, job_id, settings):
     print(f"Deploying spider {spider_name}, with settings {settings}")
 
 
     data = [
         ("project", "scrapy_project"),
         ("spider", spider_name),
+        ("jobid", job_id),
         *[
             ("setting", f"{key}={value}")
             for key, value in settings.items()
@@ -56,12 +57,12 @@ async def schedule_spider(spider_name, settings):
 async def kill_job(job_id, force=True):
     print(f"Canceling job {job_id}.")
     async with aiohttp.ClientSession() as session:
-        async with session.get(
+        async with session.post(
             f"{SCRAPYD_URL}/cancel.json",
-            params={
+            data={
                 "project": "scrapy_project",
                 "job": job_id,
-                "signal": "SIGKILL" if force else "SIGTERM",
+                "signal": "KILL" if force else "TERM",
             },
             raise_for_status=True
         ) as resp:

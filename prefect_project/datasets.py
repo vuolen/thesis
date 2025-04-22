@@ -3,6 +3,7 @@ import json
 import asyncio
 import atexit
 from prefect import task, flow, serve
+from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
 from prefect.cache_policies import DEFAULT 
 from prefect_project import scrapyd_client
@@ -24,77 +25,67 @@ ITEM_FEEDS_DIR = os.getenv("ITEM_FEEDS_DIR")
 
 @task
 async def run_scraper(spider_name: str):
+    job_id = FlowRunContext.get().flow_run.id
     logger = get_run_logger()
-    running_job = None
-    try:
-        if await scrapyd_client.is_spider_running(spider_name):
-            raise Exception(f"Spider {spider_name} is running or pending. Aborting deployment")
 
-        created_job = await scrapyd_client.schedule_spider(spider_name, settings = {
-            "FILES_STORE": FILES_DIR,
-            "DOWNLOAD_DELAY": 10,
-            "HTTPCACHE_ENABLED": False
-        })
-        running_job = created_job
-        logger.info(f"Scheduled job {created_job['jobid']} for spider {spider_name}")
+    if await scrapyd_client.is_spider_running(spider_name):
+        raise Exception(f"Spider {spider_name} is running or pending. Aborting deployment")
 
-        log_file = None
-        items_file = None
-        logger.info("Waiting for log and items file to be available")
-        while log_file is None or items_file is None:
+    created_job = await scrapyd_client.schedule_spider(spider_name, job_id, settings = {
+        "FILES_STORE": FILES_DIR,
+        "HTTPCACHE_ENABLED": False
+    })
+    logger.info(f"Scheduled job {created_job['jobid']} for spider {spider_name}")
+
+    log_file = None
+    items_file = None
+    logger.info("Waiting for log and items file to be available")
+    while log_file is None or items_file is None:
+        jobs = await scrapyd_client.listjobs()
+        for job in jobs["running"] + jobs["finished"]:
+            if job["id"] == created_job["jobid"]:
+                log_file = job.get("log_url", None)
+                items_file = job.get("items_url", None)
+        await asyncio.sleep(2)
+    log_file = os.path.join(os.getcwd(), log_file.lstrip("/"))
+    items_file = os.path.join(os.getcwd(), items_file.replace("/items", ITEM_FEEDS_DIR))
+    logger.info(f"Log file available at {log_file}")
+    logger.info(f"Items file available at {items_file}")
+
+    while True:
+        if os.path.exists(log_file):
+            break
+        await asyncio.sleep(2)
+
+    with open(log_file, "r") as log:
+        while True:
+            finished = False
             jobs = await scrapyd_client.listjobs()
-            for job in jobs["running"] + jobs["finished"]:
+            for job in jobs["finished"]:
                 if job["id"] == created_job["jobid"]:
-                    running_job = job
-                    log_file = job.get("log_url", None)
-                    items_file = job.get("items_url", None)
-            await asyncio.sleep(2)
-        log_file = os.path.join(os.getcwd(), log_file.lstrip("/"))
-        items_file = os.path.join(os.getcwd(), items_file.replace("/items", ITEM_FEEDS_DIR))
-        logger.info(f"Log file available at {log_file}")
-        logger.info(f"Items file available at {items_file}")
+                    finished = True
+                    logger.info(f"Spider {spider_name} finished")
 
-        while True:
-            if os.path.exists(log_file):
-                break
-            await asyncio.sleep(2)
-
-        with open(log_file, "r") as log:
-            while True:
-                finished = False
-                jobs = await scrapyd_client.listjobs()
-                for job in jobs["finished"]:
-                    if job["id"] == created_job["jobid"]:
-                        finished = True
-                        logger.info(f"Spider {spider_name} finished")
-
+            line = log.readline()
+            while line:
+                logger.info(line.strip())
                 line = log.readline()
-                while line:
-                    logger.info(line.strip())
-                    line = log.readline()
 
-                if finished:
-                    break
-
-        logger.info("Spider finished, getting items")
-
-        while True:
-            if os.path.exists(items_file):
+            if finished:
                 break
-            await asyncio.sleep(2)
 
-        with open(items_file, "r") as items:
-            items = [json.loads(line) for line in items.readlines()]
-            return items
+            await asyncio.sleep(10)
 
-    except Exception as e:
-        print("run_scraper encountered an exception, killing spider")
-        if job:
-            id = running_job.get("id", running_job.get("jobid", None))
-            if id:
-                logger.info(f"Killing job {id}")
-                await scrapyd_client.kill_job(id, force=True)
-        raise e
+    logger.info("Spider finished, getting items")
+
+    while True:
+        if os.path.exists(items_file):
+            break
+        await asyncio.sleep(2)
+
+    with open(items_file, "r") as items:
+        items = [json.loads(line) for line in items.readlines()]
+        return items
 
 
 @task
@@ -122,15 +113,22 @@ def save_output(annotated_documents, spider_name):
             outf.write(json.dumps(document) + "\n")
     return output_path
 
+async def cleanup_flow(flow_run, **kwargs):
+    await scrapyd_client.kill_job(flow_run.id, force=True)
 
-@flow(flow_run_name="{spider_name}-collection")
+
+@flow(
+    flow_run_name="{spider_name}-collection",
+    on_failure=[cleanup_flow],
+    on_cancellation=[cleanup_flow],
+    on_crashed=[cleanup_flow]
+)
 async def collection_flow(spider_name, parser_name):
-    output_file = os.path.join(ITEM_FEEDS_DIR, f"{spider_name}.jsonl")
-
     items = await run_scraper(spider_name)
     documents = parse_documents(items, parsers[parser_name])
     annotated_documents = await annotate_documents(documents)
     save_output(annotated_documents, spider_name)
+   
 
 spiders = [
     (CppPapersSpider.name, "identity"),
@@ -140,9 +138,9 @@ spiders = [
     (OpenJDKMailman2MailingListsSpider.name, "parse_threads"),
     (PythonDiscussSpider.name, "identity"),
     (PythonDocsSpider.name, "identity"),
-#    (PythonMailman2MailingListsSpider.name, "parse_threads"),
+    (PythonMailman2MailingListsSpider.name, "parse_threads"),
     (PythonPepSpider.name, "identity"),
-#    (PythonMailman3MailingListsSpider.name, "parse_threads"),
+    (PythonMailman3MailingListsSpider.name, "parse_threads"),
 ]
 
 parsers = {

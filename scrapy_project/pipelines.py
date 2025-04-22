@@ -6,90 +6,60 @@
 import datetime
 import os
 import hashlib
-import json
+import logging
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from scrapy.utils.serialize import ScrapyJSONEncoder 
-from scrapy.pipelines.files import FilesPipeline, FSFilesStore
-from scrapy.exceptions import NotConfigured
-from thesis_scraper.settings import FILES_STORE
+from scrapy.pipelines.files import FilesPipeline 
+from scrapy_project.settings import FILES_STORE
 
-def jsons_item(item):
-    encoder = ScrapyJSONEncoder(indent=4)
-    return encoder.encode(item)
-
-def hash_item(item):
-    objStr = jsons_item(item)
-    return hashlib.sha1(objStr.encode()).hexdigest()
-
-def item_export_path(item):
-    return os.path.join(FILES_STORE, item["spider_name"], str(item["id"]), "_item.json")
-
-# class PreProcessPipeline:
-#     def process_item(self, item, spider):
-#         item["id"] = hash_item(item)
-#         item["scraped_at"]= datetime.datetime.now().isoformat()
-#         item["spider_name"] = spider.name
-#         return item
-
-class DeduplicationPipeline:
+class PreProcessPipeline:
     def process_item(self, item, spider):
+        item["scraped_at"]= datetime.datetime.now().isoformat()
+        item["spider_name"] = spider.name
         return item
-        # I dont think this is needed
-        """ path = item_export_path(item)
-        print(path)
-        if os.path.exists(path):
-            print("exists")
-            with open(path, "rb") as f:
-                existing = json.loads(f.read())
-
-                downloaded_urls = [f["url"] for f in existing["files"]] if "files" in existing else []
-
-                if (item["id"] == existing["id"] 
-                    and downloaded_urls == existing["file_urls"]
-                    and all([os.path.exists(os.path.join(FILES_STORE, file["path"])) for file in existing["files"]])):
-                    raise DropItem(f"Item already scraped: {item}")
-        return item """
-
-""" # Allow scraped files to be stored with an extension
-# and still match when checked for existence
-class CustomFileStore(FSFilesStore):
-    def stat_file(self, path, info):
-        absolute_path = self._get_filesystem_path(path)
-        dir_path = os.path.dirname(absolute_path)
-
-        for f in os.listdir(dir_path):
-            if f.startswith(os.path.basename(absolute_path)):
-                ext = os.path.splitext(f)[1]
-                return super().stat_file(path + ext, info)
-
-        return super().stat_file(path, info)
-
-class DownloadFilesPipeline(FilesPipeline):
+    
+class CustomFilesPipeline(FilesPipeline):
     EXPIRES = 999999
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.store = CustomFileStore(args[0])
+    @classmethod
+    def split_range(file_url):
+        parsed = urlparse(file_url)
+        query_dict = parse_qs(parsed.query, strict_parsing=True)
 
-    def file_path(self, request, response=None, info=None, *, item=None):
-        ext = ""
-        if response:
-            content_type = response.headers.get("Content-Type").decode()
-            ext = "." + content_type.split("/")[1].split(";")[0]
-        id = hashlib.sha1(request.url.encode()).hexdigest()
-        return os.path.join(item["spider_name"], str(item["id"]), id) + ext
+        old_start = datetime.datetime.strptime(query_dict["start"][0], "%Y-%m-%d")
+        old_end = datetime.datetime.strptime(query_dict["end"][0], "%Y-%m-%d")
+        newInterval = (old_end - old_start) / 2
 
-class ExportPipeline:
-    def process_item(self, item, spider):
-        path = item_export_path(item)
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        with open(path, "wb") as f:
-            f.write(jsons_item(item).encode())
+        return [
+            urlunparse(parsed._replace(
+                query=urlencode({
+                    "start": start, 
+                    "end": end, 
+                })
+            ))
+            for start, end in [
+                (old_start, old_start + newInterval),
+                (old_start + newInterval, old_end)
+            ]
+        ]
 
-        return item """
+    def item_completed(self, results, item, info):
+        if not info.spider.name == "python-mailman3-mailing-lists":
+            return super().item_completed(results, item, info)
 
+        item_success = all(x[0] for x in results)
+        if item_success:
+            return super().item_completed(results, item, info)
+        else:
+            new_file_urls = []
+            for (ok, value), url in zip(results, item["file_urls"]):
+                if ok:
+                    new_file_urls.append(url)
+                else:
+                    logging.error(f"Failed to download {url}, splitting range")
+                    new = CustomFilesPipeline.split_range(url)
+                    logging.info(f"Split {url} into {new}")
+                    new_file_urls.extend(new)
 
-# class PythonMailman3Pipeline(ThesisScraperPipeline):
-#     def media_downloaded(self, response, request, info, *, item):
-#         if response.status == 400:
-#             raise FileException("Empty mail archive")
-#         return super().media_downloaded(response, request, info, item=item)
+            item["file_urls"] = new_file_urls
+            return super().process_item(item, info.spider)

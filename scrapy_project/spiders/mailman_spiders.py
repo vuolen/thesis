@@ -50,54 +50,12 @@ class Mailman3Spider(scrapy.Spider):
             if tableCell.extract().endswith("@python.org"):
                 listEmail = tableCell.extract().replace("list", "archive")
                 archiveLink = f"https://mail.python.org/archives/list/{listEmail}/export/{listEmail}.mbox.gz"
-                range = (datetime.date(1990, 1, 1), self.END_DATE)
-                cb_kwargs = {
-                    "listName": listEmail,
-                    "range": range,
-                    "next_requests": []
-                }
-                yield response.follow(archiveLink, self.parseRange, cb_kwargs=cb_kwargs, errback=self.onError)
-
-    def parseRange(self, response, listName, range, next_requests):
-        latency = response.meta.get("download_latency", None)
-        self.logger.info(f"Downloaded {listName} from {range[0]} to {range[1]} in {latency} seconds")
-        self.logger.info(f"{len(next_requests)} requests left for {listName}")
-
-        if len(next_requests) > 0:
-            yield Mailman3Spider.popNextRequest(next_requests)
-
-    def onError(self, failure):
-        latency = failure.request.meta.get("download_latency", None)
-        if failure.check(HttpError):
-            if failure.value.response.status != 400:
-                return
-
-        start = failure.request.cb_kwargs["range"][0]
-        end = failure.request.cb_kwargs["range"][1]
-        newInterval = (end - start) / 2
-
-        self.logger.info("".join([
-            f"Failed to download {failure.request.url} ",
-            f"({latency} seconds)" if latency else "(cached), ",
-            "splitting into two"
-        ]))
-
-        base_url = urljoin(failure.request.url, urlparse(failure.request.url).path)
+                yield BaseItem(
+                    name=listEmail,
+                    file_urls = [f"{archiveLink}?start=1990-01-01&end=2026-01-01"]
+                )
 
 
-        secondHalf = failure.request.replace(
-            url = base_url + f"?start={(start + newInterval).strftime('%Y-%m-%d')}&end={end.strftime('%Y-%m-%d')}",
-            cb_kwargs = {**failure.request.cb_kwargs, "range": (start + newInterval, end)}
-        )
-
-        firstHalf = failure.request.replace(
-            url = base_url + f"?start={start.strftime('%Y-%m-%d')}&end={(start + newInterval).strftime('%Y-%m-%d')}",
-            cb_kwargs = {**failure.request.cb_kwargs, "range": (start, start + newInterval)}
-        )
-
-        nextRequests = [firstHalf, secondHalf] + failure.request.cb_kwargs["next_requests"]
-
-        yield Mailman3Spider.popNextRequest(nextRequests)
 
         
 
