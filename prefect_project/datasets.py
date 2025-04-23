@@ -25,6 +25,11 @@ ITEM_FEEDS_DIR = os.getenv("ITEM_FEEDS_DIR")
 
 @task
 async def run_scraper(spider_name: str):
+
+    with open("/home/lennu/code/thesis/data/feeds/scrapy_project/openjdk-mailman2-mailing-lists/dd8d7360-3ad4-4aa7-aace-7e41a905c363.jl", "r") as items:
+        items = [json.loads(line) for line in items.readlines()]
+        return items
+
     job_id = FlowRunContext.get().flow_run.id
     logger = get_run_logger()
 
@@ -38,19 +43,15 @@ async def run_scraper(spider_name: str):
     logger.info(f"Scheduled job {created_job['jobid']} for spider {spider_name}")
 
     log_file = None
-    items_file = None
-    logger.info("Waiting for log and items file to be available")
-    while log_file is None or items_file is None:
+    logger.info("Waiting for log file to be available")
+    while log_file is None:
         jobs = await scrapyd_client.listjobs()
         for job in jobs["running"] + jobs["finished"]:
             if job["id"] == created_job["jobid"]:
                 log_file = job.get("log_url", None)
-                items_file = job.get("items_url", None)
         await asyncio.sleep(2)
     log_file = os.path.join(os.getcwd(), log_file.lstrip("/"))
-    items_file = os.path.join(os.getcwd(), items_file.replace("/items", ITEM_FEEDS_DIR))
     logger.info(f"Log file available at {log_file}")
-    logger.info(f"Items file available at {items_file}")
 
     while True:
         if os.path.exists(log_file):
@@ -77,6 +78,16 @@ async def run_scraper(spider_name: str):
             await asyncio.sleep(10)
 
     logger.info("Spider finished, getting items")
+
+    items_file = None
+    while items_file is None:
+        jobs = await scrapyd_client.listjobs()
+        for job in jobs["finished"]:
+            if job["id"] == created_job["jobid"]:
+                items_file = job.get("items_url", None)
+        await asyncio.sleep(2)
+    items_file = os.path.join(os.getcwd(), items_file.replace("/items", ITEM_FEEDS_DIR))
+    logger.info(f"Items file available at {items_file}")
 
     while True:
         if os.path.exists(items_file):
@@ -113,7 +124,7 @@ def save_output(annotated_documents, spider_name):
             outf.write(json.dumps(document) + "\n")
     return output_path
 
-async def cleanup_flow(flow_run, **kwargs):
+async def cleanup_flow(flow, flow_run, state):
     await scrapyd_client.kill_job(flow_run.id, force=True)
 
 

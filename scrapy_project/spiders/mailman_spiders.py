@@ -33,18 +33,6 @@ class Mailman3Spider(scrapy.Spider):
     # Use fixed end date instead of today to help http caching
     END_DATE = datetime.date(2026, 1, 1)
 
-    @staticmethod
-    def replaceNextRequests(request, nextRequests):
-        return request.replace(cb_kwargs={
-            **request.cb_kwargs,
-            "next_requests": nextRequests
-        })
-    
-    @staticmethod
-    def popNextRequest(nextRequests):
-        req = nextRequests[0]
-        return Mailman3Spider.replaceNextRequests(req, nextRequests[1:])
-
     def parse(self, response):
         for tableCell in response.css('table tr td::text'):
             if tableCell.extract().endswith("@python.org"):

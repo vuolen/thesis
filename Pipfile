@@ -10,6 +10,8 @@ scrapyd-client = "*"
 disjoint-set = "*"
 prefect = "*"
 aiohttp = "*"
+nicegui = "*"
+python-dotenv = "*"
 
 [dev-packages]
 

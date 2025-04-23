@@ -4,15 +4,17 @@ import datetime
 import os
 from disjoint_set import DisjointSet
 from email.utils import parsedate_to_datetime
-from prefect import task, flow
+from prefect import get_run_logger, task
+from prefect.artifacts import (
+    create_progress_artifact,
+    update_progress_artifact,
+)
 import sys
 
 FILES_DIR = os.getenv("FILES_DIR")
 
-
-@task
 def read_messages(item):
-    """Read messages from mailbox files and return them as a dictionary."""
+    logger = get_run_logger()
     messages = {}
     mailboxFiles = [os.path.join(FILES_DIR, file["path"]) for file in item["files"]]
     
@@ -23,12 +25,10 @@ def read_messages(item):
                 msg = mbox[key]
                 messages[msg["Message-ID"]] = msg
             except email.errors.MessageParseError:
-                print(f"Failed to parse message {key} in {file}", file=sys.stderr)
+                logger.error(f"Failed to parse message {key} in {file}")
                 continue
     return messages
 
-
-@task
 def build_thread_groups(messages):
     threads = DisjointSet.from_iterable(messages.keys())
 
@@ -38,10 +38,8 @@ def build_thread_groups(messages):
         for linkedId in linkedIds:
             threads.union(linkedId, msgId)
 
-    return threads
+    return list(threads.itersets())
 
-
-@task
 def get_threads(messages, threads):
     grouped_by_thread = []
     for thread in list(threads):
@@ -61,13 +59,40 @@ def get_threads(messages, threads):
 
 @task
 def parse_threads(items):
-    """Parse mailbox files, build threads, and sort them."""
+    logger = get_run_logger()
+    # An item is a mailing list and all it's digests
+    progress_artifact_id = create_progress_artifact(
+        progress=0.0,
+    )
+    progress_step = 1 / len(items)
+    os.makedirs(os.path.join(FILES_DIR, "threads"), exist_ok=True)
     documents = []
-    for item in items:
-        messages = read_messages(items)
+    for i,item in enumerate(items):
+        messages = read_messages(item)
+        logger.info(f"Read {len(messages)} messages from {item['name']}")
         thread_groups = build_thread_groups(messages)
+        logger.info(f"Built {len(thread_groups)} thread groups for {item['name']}")
         threads = get_threads(messages, thread_groups)
-        for thread in threads:
-            documents.append(thread)
+        logger.info(f"Got {len(threads)} threads for {item['name']}")
         
+        for index, thread in enumerate(threads):
+            thread_file_path = f"threads/{item["id"]}-{index}.jl"
+            with open(os.path.join(FILES_DIR, thread_file_path), "w") as thread_file:
+                for msg in thread:
+                    thread_file.write(f"{msg}\n")
 
+            documents.append({
+                "name": thread[0]["Subject"],
+                "list": item["name"],
+                "id": f"{item["id"]}-{index}",
+                "scraped_at": item["scraped_at"],
+                "files": [{"path": thread_file_path}],
+            })
+
+        update_progress_artifact(
+            artifact_id=progress_artifact_id,
+            progress=progress_step * (i + 1),
+        )
+
+    return documents
+            

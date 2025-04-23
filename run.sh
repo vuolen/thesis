@@ -26,6 +26,12 @@ if [ "$1" == "server" ]; then
 elif [ "$1" == "deploy" ]; then
     echo "Running deploy"
     pipenv run python -m prefect_project.datasets
+elif [ "$1" == "scrapyd" ]; then
+    echo "Running scrapyd"
+    pipenv run scrapyd 
+elif [ "$1" == "gui" ]; then
+    echo "Running gui"
+    pipenv run python3 gui/index.py
 else
     echo "Please specify a command: server or deploy"
     exit 1
