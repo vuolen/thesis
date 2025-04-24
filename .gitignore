@@ -9,6 +9,7 @@ eggs
 logs
 project.egg-info
 twistd.pid
+.env 
 
 # any pycache
 __pycache__/
