@@ -33,6 +33,10 @@ def collection(collection: str):
             for line in data
         ]
 
+        if len(items) == 0:
+            ui.label("No items found")
+            return
+
         columns = [
             { "name": "name", "label": "Name", "field": "name", "align": "left", "sortable": False, },
             *[

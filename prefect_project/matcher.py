@@ -5,14 +5,14 @@ PATTERN_DIR = os.getenv("PATTERN_DIR")
 patterns = os.listdir(PATTERN_DIR)
 
 async def run_command(command, stdin=None):
-    proc = await asyncio.create_subprocess_shell(
-        command,
+    proc = await asyncio.create_subprocess_exec(
+        *command.split(),
         stdin=asyncio.subprocess.PIPE if stdin else None,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE
     )
 
-    stdout, stderr = await proc.communicate(input=stdin)
+    stdout, stderr = await proc.communicate(input=stdin.encode() if stdin else None)
 
     return (stdout, stderr)
 
