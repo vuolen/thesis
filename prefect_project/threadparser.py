@@ -2,6 +2,7 @@ import mailbox
 import email
 import datetime
 import os
+import json
 from disjoint_set import DisjointSet
 from email.utils import parsedate_to_datetime
 from prefect import get_run_logger, task
@@ -71,22 +72,18 @@ def parse_threads(items):
         messages = read_messages(item)
         logger.info(f"Read {len(messages)} messages from {item['name']}")
         thread_groups = build_thread_groups(messages)
-        logger.info(f"Built {len(thread_groups)} thread groups for {item['name']}")
         threads = get_threads(messages, thread_groups)
         logger.info(f"Got {len(threads)} threads for {item['name']}")
         
         for index, thread in enumerate(threads):
-            thread_file_path = f"threads/{item["id"]}-{index}.jl"
-            with open(os.path.join(FILES_DIR, thread_file_path), "w") as thread_file:
-                for msg in thread:
-                    thread_file.write(f"{msg}\n")
-
             documents.append({
                 "name": thread[0]["Subject"],
                 "list": item["name"],
                 "id": f"{item["id"]}-{index}",
                 "scraped_at": item["scraped_at"],
-                "files": [{"path": thread_file_path}],
+                "files": [{"stdin": json.dumps([
+                    str(msg) for msg in thread
+                ]).encode("utf-8")}],
             })
 
         update_progress_artifact(

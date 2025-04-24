@@ -108,10 +108,13 @@ async def annotate_documents(documents):
     for document in documents:
         for file in document["files"]:
             try:
-                fullPath = os.path.join(FILES_DIR, file["path"])
-                document["matches"] = await ripgrepAll(fullPath)
+                if "stdin" in file:
+                    document["matches"] = await ripgrepAll("-", stdin=file["stdin"])
+                elif "path" in file:
+                    fullPath = os.path.join(FILES_DIR, file["path"])
+                    document["matches"] = await ripgrepAll(fullPath)
             except Exception as e:
-                print(f"Error processing file {file['path']}")
+                print(f"Error processing file {file.get('path', file.get('stdin'))} from document {document['id']}")
                 raise e
     return documents
 
