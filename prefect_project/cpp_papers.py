@@ -1,6 +1,6 @@
 
 
-def to_document(item):
+async def to_documents(items):
     def fix_encoding(file):
         if file["path"].endswith(".html") or file["path"].endswith(".htm"):
             with open(file["path"], "rb") as f:
@@ -13,7 +13,8 @@ def to_document(item):
 
         return file
 
-    return {
-        **item,
-        "files": [fix_encoding(file) for file in item["files"]]
-    }
+    async for item in items:
+        yield {
+            **item,
+            "files": [fix_encoding(file) for file in item["files"]]
+        }
