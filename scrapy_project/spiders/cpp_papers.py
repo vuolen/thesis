@@ -31,7 +31,12 @@ class CppPapersSpider(scrapy.Spider):
             if len(links) > 1:
                 links = [link for link in links if ".asc" not in link]
 
+
             link = list(links)[0]
+
+            if "N0654.pdf" in link:
+                # special case, pdf is malformed
+                link = link.replace("N0654.pdf", "N0654.ps")
 
             yield BaseItem(
                 name=link,
