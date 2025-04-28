@@ -68,7 +68,7 @@ async def parse_threads(items):
         
         for index, thread in enumerate(threads):
             yield {
-                "name": thread[0]["Subject"],
+                "name": str(thread[0]["Subject"]),
                 "list": item["name"],
                 "id": f"{item["id"]}-{index}",
                 "scraped_at": item["scraped_at"],
