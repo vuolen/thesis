@@ -6,7 +6,7 @@ from prefect import task, flow, serve
 from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
 from prefect.cache_policies import DEFAULT 
-from prefect_project import scrapyd_client
+from prefect_project import cpp_papers, scrapyd_client
 from prefect_project.threadparser import parse_threads
 from scrapy_project.items import BaseItem
 from scrapy_project.spiders.cpp_papers import CppPapersSpider
@@ -184,7 +184,7 @@ async def collection_flow(spider_name, parser_name):
    
 
 spiders = [
-    (CppPapersSpider.name, None),
+    (CppPapersSpider.name, "cpp_papers"),
     (CppMailingListsSpider.name, None),
     (JavaJepSpider.name, None),
     (JavaSpecsSpider.name, None),
@@ -198,6 +198,7 @@ spiders = [
 
 parsers = {
     "parse_threads": parse_threads,
+    "cpp_papers": cpp_papers.to_document,
 }
 
 def main():

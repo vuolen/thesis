@@ -12,7 +12,7 @@ async def run_command(command, stdin=None):
         stderr=asyncio.subprocess.PIPE
     )
 
-    stdout, stderr = await proc.communicate(input=stdin.encode() if stdin else None)
+    stdout, stderr = await proc.communicate(input=stdin.encode("utf-8") if stdin else None)
 
     return (stdout, stderr)
 
