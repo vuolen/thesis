@@ -20,8 +20,8 @@ def read_messages(item):
             try:
                 msg = mbox[key]
                 messages[msg["Message-ID"]] = msg
-            except email.errors.MessageParseError:
-                logger.error(f"Failed to parse message {key} in {file}")
+            except Exception as e:
+                logger.error(f"Failed to parse message {key} in {file}, error: {e}")
                 continue
     return messages
 
