@@ -198,7 +198,7 @@ spiders = [
 
 parsers = {
     "parse_threads": parse_threads,
-    "cpp_papers": cpp_papers.to_document,
+    "cpp_papers": cpp_papers.to_documents,
 }
 
 def main():
