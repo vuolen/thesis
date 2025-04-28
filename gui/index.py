@@ -61,6 +61,7 @@ def collection(collection: str):
         table = ui.table(
             rows=rows,
             columns=columns,
+            rowsPerPage=200,
         )
         table.add_slot('body-cell-name', 
             '''
