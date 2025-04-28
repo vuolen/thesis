@@ -1,0 +1,21 @@
+{
+  // Copy this to ~/.config/ripgrep-all/config.jsonc 
+  "$schema": "./config.v1.schema.json",
+
+  "custom_adapters": [
+    {
+      "name": "pandoc-legacy",
+      "description": "Uses legacy pandoc (<v3) to convert binary/unreadable text documents to plain markdown-like text",
+      "version": 3,
+      "extensions": ["html"],
+      "binary": "pandoc",
+      "mimetypes": null,
+      "args": [
+        "--from=$input_file_extension",
+        "--to=plain",
+        "--wrap=none",
+        "--atx-headers"
+      ]
+    }
+  ]
+}
