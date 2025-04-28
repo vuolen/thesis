@@ -61,8 +61,10 @@ def collection(collection: str):
         table = ui.table(
             rows=rows,
             columns=columns,
-            rowsPerPage=200,
-        )
+            pagination={
+                "rowsPerPage": 200,
+            },
+        ).style('width: calc(100vw - 2rem); height: calc(100vh - 2rem);')
         table.add_slot('body-cell-name', 
             '''
             <q-td :props="props">

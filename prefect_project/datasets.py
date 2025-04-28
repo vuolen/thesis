@@ -1,7 +1,7 @@
 import os
 import json
 import asyncio
-import atexit
+import time
 from prefect import task, flow, serve
 from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
@@ -31,7 +31,7 @@ async def run_scraper(spider_name: str) -> AsyncGenerator[BaseItem, None]:
     job_id = FlowRunContext.get().flow_run.id
     logger = get_run_logger()
 
-    # with open("/home/lennu/code/thesis/data/feeds/scrapy_project/openjdk-mailman2-mailing-lists/dd8d7360-3ad4-4aa7-aace-7e41a905c363.jl", "r") as items:
+    # with open("/home/lennu/code/thesis/data/feeds/scrapy_project/openjdk-mailman2-mailing-lists/bd1083e7-7520-42e2-bb8b-4c2d1a40344e.jl", "r") as items:
     #     items = [json.loads(line) for line in items.readlines()]
     #     for item in items:
     #         logger.info(f"Yielding item {item['name']}")
@@ -122,15 +122,38 @@ async def annotate_documents(
             "matches": document_matches,
         }
 
-    tasks = []
-    async for document in documents:
-        tasks.append(annotate_document(document))
+    document_queue = asyncio.Queue()
 
-        if len(tasks) == 10:
-            results = await asyncio.gather(*tasks)
-            for result in results:
-                yield result
+    async def producer():
+        async for document in documents:
+            await document_queue.put(document)
+        await document_queue.put(None)
+
+    asyncio.create_task(producer())
+
+
+    last_batch_processed = time.time()
+    exit = False
+    while not exit:
+        if time.time() - last_batch_processed > 5 or document_queue.qsize() > 10:
             tasks = []
+            for _ in range(min(10, document_queue.qsize())):
+                document = await document_queue.get()
+                if document is None:
+                    exit = True
+                    break
+                tasks.append(annotate_document(document))
+
+            annotated_documents = await asyncio.gather(*tasks)
+
+            for annotated_document in annotated_documents:
+                yield annotated_document
+
+            last_batch_processed = time.time()
+        
+        await asyncio.sleep(0.1)
+
+
 
 @task
 async def save_output(
