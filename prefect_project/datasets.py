@@ -1,7 +1,7 @@
 import os
 import json
 import asyncio
-import time
+from aiostream import Stream, stream, pipe, aiter_utils
 from prefect import task, flow, serve
 from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
@@ -25,7 +25,6 @@ from typing import AsyncGenerator
 FILES_DIR = os.getenv("FILES_DIR")
 ITEM_FEEDS_DIR = os.getenv("ITEM_FEEDS_DIR")
 
-@task
 async def run_scraper(spider_name: str) -> AsyncGenerator[BaseItem, None]:
 
     job_id = FlowRunContext.get().flow_run.id
@@ -95,76 +94,31 @@ async def run_scraper(spider_name: str) -> AsyncGenerator[BaseItem, None]:
 
 Document = dict
 AnnotatedDocument = dict
-@task
 async def annotate_documents(
-        documents: AsyncGenerator[Document, None]
-    ) -> AsyncGenerator[AnnotatedDocument, None]:
+        document: Document
+    ) -> AnnotatedDocument:
 
-    async def annotate_document(document: Document) -> AnnotatedDocument:
-        document_matches = {}
-        for file in document["files"]:
-            try:
-                if "stdin" in file:
-                    file_matches = await ripgrepAll("-", stdin=file["stdin"])
-                elif "path" in file:
-                    fullPath = os.path.join(FILES_DIR, file["path"])
-                    file_matches = await ripgrepAll(fullPath)
+    document_matches = {}
+    for file in document["files"]:
+        try:
+            if "stdin" in file:
+                file_matches = await ripgrepAll("-", stdin=file["stdin"])
+            elif "path" in file:
+                fullPath = os.path.join(FILES_DIR, file["path"])
+                file_matches = await ripgrepAll(fullPath)
 
-                for k,v in file_matches.items():
-                    document_matches[k] = document_matches.get(k, 0) + v
+            for k,v in file_matches.items():
+                document_matches[k] = document_matches.get(k, 0) + v
 
-            except Exception as e:
-                print(f"Error processing file {file.get('path', file.get('stdin'))} from document {document['id']}")
-                raise e
+        except Exception as e:
+            print(f"Error processing file {file.get('path', file.get('stdin'))} from document {document['id']}")
+            raise e
 
-        return {
-            **document,
-            "matches": document_matches,
-        }
-
-    document_queue = asyncio.Queue()
-
-    async def producer():
-        async for document in documents:
-            await document_queue.put(document)
-        await document_queue.put(None)
-
-    asyncio.create_task(producer())
-
-
-    last_batch_processed = time.time()
-    exit = False
-    while not exit:
-        if time.time() - last_batch_processed > 5 or document_queue.qsize() > 10:
-            tasks = []
-            for _ in range(min(10, document_queue.qsize())):
-                document = await document_queue.get()
-                if document is None:
-                    exit = True
-                    break
-                tasks.append(annotate_document(document))
-
-            annotated_documents = await asyncio.gather(*tasks)
-
-            for annotated_document in annotated_documents:
-                yield annotated_document
-
-            last_batch_processed = time.time()
-        
-        await asyncio.sleep(0.1)
-
-
-
-@task
-async def save_output(
-        annotated_documents: AsyncGenerator[AnnotatedDocument, None],
-        spider_name: str
-    ) -> str:
-    output_path = os.path.join(ITEM_FEEDS_DIR, f"{spider_name}-final.jsonl")
-    with open(output_path, "w") as outf:
-        async for document in annotated_documents:
-            outf.write(json.dumps(document) + "\n")
-    return output_path
+    return {
+        **document,
+        "matches": document_matches,
+    }
+ 
 
 async def cleanup_flow(flow, flow_run, state):
     await scrapyd_client.kill_job(flow_run.id, force=True)
@@ -177,11 +131,20 @@ async def cleanup_flow(flow, flow_run, state):
     on_crashed=[cleanup_flow]
 )
 async def collection_flow(spider_name, parser_name):
-    items = run_scraper(spider_name)
-    documents = parsers[parser_name](items) if parser_name is not None else items
-    annotated_documents = annotate_documents(documents)
-    await save_output(annotated_documents, spider_name)
-   
+
+    parser = parsers.get(parser_name, lambda x: [x])
+    output_file_path = os.path.join(ITEM_FEEDS_DIR, f"{spider_name}-final.jsonl")
+
+    with open(output_file_path, "w") as outf:
+        pipeline = (stream.iterate(run_scraper(spider_name))
+            | pipe.flatmap( lambda item: stream.iterate(parser(item)), task_limit=10)
+            | pipe.map(aiter_utils.async_(lambda document: annotate_documents(document)), task_limit=10)
+            | pipe.filter( lambda document: sum(document["matches"].values()) > 0))
+        
+        async for document in pipeline:
+            outf.write(json.dumps(document) + "\n")
+
+
 
 spiders = [
     (CppPapersSpider.name, "cpp_papers"),

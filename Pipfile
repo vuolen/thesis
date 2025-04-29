@@ -12,6 +12,7 @@ prefect = "*"
 aiohttp = "*"
 nicegui = "*"
 python-dotenv = "*"
+aiostream = "*"
 
 [dev-packages]
 

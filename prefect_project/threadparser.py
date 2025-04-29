@@ -53,27 +53,24 @@ def get_threads(messages, threads):
     return grouped_by_thread
 
 
-@task
-async def parse_threads(items):
+def parse_threads(item):
     logger = get_run_logger()
     # An item is a mailing list and all it's digests
-    os.makedirs(os.path.join(FILES_DIR, "threads"), exist_ok=True)
-    async for item in items:
-        logger.info(f"Parsing {item['name']}")
-        messages = read_messages(item)
-        logger.info(f"Read {len(messages)} messages from {item['name']}")
-        thread_groups = build_thread_groups(messages)
-        threads = get_threads(messages, thread_groups)
-        logger.info(f"Got {len(threads)} threads for {item['name']}")
-        
-        for index, thread in enumerate(threads):
-            yield {
-                "name": str(thread[0]["Subject"]),
-                "list": item["name"],
-                "id": f"{item["id"]}-{index}",
-                "scraped_at": item["scraped_at"],
-                "files": [{"stdin": json.dumps([
-                    str(msg)
-                ])} for msg in thread],
-            }
+    logger.info(f"Parsing {item['name']}")
+    messages = read_messages(item)
+    logger.info(f"Read {len(messages)} messages from {item['name']}")
+    thread_groups = build_thread_groups(messages)
+    threads = get_threads(messages, thread_groups)
+    logger.info(f"Got {len(threads)} threads for {item['name']}")
+    
+    for index, thread in enumerate(threads):
+        yield {
+            "name": str(thread[0]["Subject"]),
+            "list": item["name"],
+            "id": f"{item["id"]}-{index}",
+            "scraped_at": item["scraped_at"],
+            "files": [{"stdin": json.dumps([
+                str(msg)
+            ])} for msg in thread],
+        }
             
