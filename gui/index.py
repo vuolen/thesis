@@ -88,6 +88,13 @@ def serve_item_url(collection: str, id: str, urlIndex: int):
     else:
         ui.label("Item not found")
 
+def navigate_to_item_url(collection: str, id: str, urlIndex: int):
+    item = get_item_by_id(collection, id)
+    if item:
+        ui.navigate.to(item["file_urls"][urlIndex])
+    else:
+        ui.label("Item not found")
+
 @ui.page('/java-jep/{id}')
 def java_jep(id: str):
     item = get_item_by_id("java-jep", id)
@@ -112,7 +119,7 @@ def python_pep(id: str):
 
 @ui.page('/cpp-mailing-lists/{id}')
 def cpp_mailing_lists(id: str):
-    serve_item_url("cpp-mailing-lists", id, -1)
+    navigate_to_item_url("cpp-mailing-lists", id, -1)
 
 app.add_static_files('/files', FILES_DIR)
 
