@@ -37,15 +37,20 @@ def build_thread_groups(messages):
     return list(threads.itersets())
 
 def get_threads(messages, threads):
+    logger = get_run_logger()
     grouped_by_thread = []
     for thread in list(threads):
         msgs = [messages[msgId] for msgId in thread if msgId in messages]
 
         def dateKey(msg):
-            msgDate = parsedate_to_datetime(msg.get("Date")) if msg.get("Date") else datetime.datetime.max
-            if msgDate.tzinfo is None or msgDate.tzinfo.utcoffset(msgDate) is None:
-                msgDate = msgDate.replace(tzinfo=datetime.timezone.utc)
-            return msgDate
+            try:
+                msgDate = parsedate_to_datetime(msg.get("Date")) if msg.get("Date") else datetime.datetime.max
+                if msgDate.tzinfo is None or msgDate.tzinfo.utcoffset(msgDate) is None:
+                    msgDate = msgDate.replace(tzinfo=datetime.timezone.utc)
+                return msgDate
+            except Exception as e:
+                logger.error(f"Failed to parse date for message {msg['Message-ID']}, error: {e}")
+                return datetime.datetime.max
 
         msgs.sort(key=dateKey)
         grouped_by_thread.append(msgs)
