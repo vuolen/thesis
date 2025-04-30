@@ -115,7 +115,7 @@ def java_specs(id: str):
 
 @ui.page('/python-pep/{id}')
 def python_pep(id: str):
-    serve_item_url("python-pep", id, 0)
+    navigate_to_item_url("python-pep", id, 0)
 
 @ui.page('/cpp-mailing-lists/{id}')
 def cpp_mailing_lists(id: str):

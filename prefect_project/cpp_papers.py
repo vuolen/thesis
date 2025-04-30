@@ -6,7 +6,7 @@ def fix_encoding(file):
     if file["path"].endswith(".html") or file["path"].endswith(".htm"):
         with open(os.path.join(FILES_DIR, file["path"]), "rb") as f:
             head = f.read(1000)
-            if "charset=windows-1252" in head.lower():
+            if b"charset=windows-1252" in head.lower():
                 content = head + f.read()
                 return {
                     "stdin": content.decode("windows-1252")
