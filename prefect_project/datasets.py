@@ -111,8 +111,7 @@ async def annotate_documents(
                 document_matches[k] = document_matches.get(k, 0) + v
 
         except Exception as e:
-            print(f"Error processing file {file.get('path', file.get('stdin'))} from document {document['id']}")
-            raise e
+            print(f"Error processing file {file.get('path', file.get('stdin'))} from document {document}")
 
     return {
         **document,
