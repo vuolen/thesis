@@ -50,7 +50,7 @@ def get_threads(messages, threads):
                 return msgDate
             except Exception as e:
                 logger.error(f"Failed to parse date for message {msg['Message-ID']}, error: {e}")
-                return datetime.datetime.max
+                return datetime.datetime.max.replace(tzinfo=datetime.timezone.utc)
 
         msgs.sort(key=dateKey)
         grouped_by_thread.append(msgs)
