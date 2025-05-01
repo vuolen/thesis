@@ -16,11 +16,7 @@ def fix_encoding(file):
                     break
         detector.close()
 
-        if detector.confidence < 0.9:
-            print(f"Warning: low confidence in encoding detection for {file['path']}: {detector.confidence}")
-
         encoding = detector.result["encoding"]
-
         decoded = content.decode(encoding, errors="strict")
 
         return {
