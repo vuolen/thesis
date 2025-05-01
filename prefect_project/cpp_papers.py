@@ -1,21 +1,33 @@
 import os
+from chardet.universaldetector import UniversalDetector
 
 FILES_DIR = os.getenv("FILES_DIR")
 
 def fix_encoding(file):
+    detector = UniversalDetector()
     if file["path"].endswith(".html") or file["path"].endswith(".htm"):
+        detector.reset()
+        content = b""
         with open(os.path.join(FILES_DIR, file["path"]), "rb") as f:
-            head = f.read(1000)
-            if b"charset=windows-1252" in head.lower():
-                content = head + f.read()
-                return {
-                    "stdin": content.decode("windows-1252")
-                }
-            elif b"charset=iso-8859-1" in head.lower():
-                content = head + f.read()
-                return {
-                    "stdin": content.decode("iso-8859-1")
-                }
+            for line in f.readlines():
+                content += line
+                detector.feed(line)
+                if detector.done:
+                    break
+        detector.close()
+
+        if detector.confidence < 0.9:
+            print(f"Warning: low confidence in encoding detection for {file['path']}: {detector.confidence}")
+
+        encoding = detector.result["encoding"]
+
+        decoded = content.decode(encoding, errors="strict")
+
+        return {
+            "stdin": decoded,
+        }
+
+
 
     return file
 
