@@ -140,8 +140,9 @@ async def collection_flow(spider_name, parser_name):
             | pipe.map(aiter_utils.async_(lambda document: annotate_documents(document)), task_limit=10)
             | pipe.filter( lambda document: sum(document["matches"].values()) > 0))
         
-        async for document in pipeline:
-            outf.write(json.dumps(document) + "\n")
+        with pipeline.stream() as stream:
+            async for document in stream:
+                outf.write(json.dumps(document) + "\n")
 
 
 
