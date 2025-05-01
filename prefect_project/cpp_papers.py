@@ -11,6 +11,11 @@ def fix_encoding(file):
                 return {
                     "stdin": content.decode("windows-1252")
                 }
+            elif b"charset=iso-8859-1" in head.lower():
+                content = head + f.read()
+                return {
+                    "stdin": content.decode("iso-8859-1")
+                }
 
     return file
 
