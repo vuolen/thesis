@@ -98,6 +98,7 @@ async def annotate_documents(
         document: Document
     ) -> AnnotatedDocument:
 
+    logger = get_run_logger()
     document_matches = {}
     for file in document["files"]:
         try:
@@ -111,7 +112,8 @@ async def annotate_documents(
                 document_matches[k] = document_matches.get(k, 0) + v
 
         except Exception as e:
-            print(f"Error processing file {file.get('path', file.get('stdin'))} from document {document}")
+            logger.error(f"Error processing file {file.get('path', file.get('stdin'))} from document {document}")
+            logger.error(e)
 
     return {
         **document,
