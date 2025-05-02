@@ -11,15 +11,17 @@ def fix_encoding(file, item):
         if file["path"].endswith(".html") or file["path"].endswith(".htm"):
             detector.reset()
             content = b""
+            charset = None
             with open(os.path.join(FILES_DIR, file["path"]), "rb") as f:
                 for line in f.readlines():
+                    if b"charset=" in line:
+                        charset = line.split(b"charset=")[1].split(b'"')[0]
                     content += line
-                    detector.feed(line)
-                    if detector.done:
-                        break
+                    if not detector.done and charset is None:
+                        detector.feed(line)
             detector.close()
 
-            encoding = detector.result["encoding"]
+            encoding = charset if charset else detector.result["encoding"]
             decoded = content.decode(encoding, errors="strict")
 
             return {
