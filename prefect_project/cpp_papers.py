@@ -15,9 +15,9 @@ def fix_encoding(file, item):
             with open(os.path.join(FILES_DIR, file["path"]), "rb") as f:
                 for line in f.readlines():
                     if b"charset=" in line:
-                        charset = line.split(b"charset=")[1].split(b'"')[0]
+                        charset = line.split(b"charset=")[1].split(b'"')[0].decode("utf-8")
                     content += line
-                    if not detector.done and charset is None:
+                    if charset is None:
                         detector.feed(line)
             detector.close()
 
