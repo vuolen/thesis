@@ -1,7 +1,8 @@
 import os
 import re
-from chardet.universaldetector import UniversalDetector
+import chardet
 from prefect import get_run_logger
+
 
 FILES_DIR = os.getenv("FILES_DIR")
 
@@ -10,9 +11,7 @@ CHARSET_REGEX = br"charset=([a-zA-Z0-9\-_]+)"
 def fix_encoding(file, item):
     logger = get_run_logger()
     try:
-        detector = UniversalDetector()
         if file["path"].endswith(".html") or file["path"].endswith(".htm"):
-            detector.reset()
             content = b""
             charset = None
             with open(os.path.join(FILES_DIR, file["path"]), "rb") as f:
@@ -23,7 +22,7 @@ def fix_encoding(file, item):
                 content += line
 
             potential_encodings = [
-                detector.detect(content)["encoding"],
+                chardet.detect(content)["encoding"],
                 charset,
                 "utf-8",
                 "iso-8859-1",
