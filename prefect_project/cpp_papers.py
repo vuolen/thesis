@@ -1,8 +1,11 @@
 import os
+import re
 from chardet.universaldetector import UniversalDetector
 from prefect import get_run_logger
 
 FILES_DIR = os.getenv("FILES_DIR")
+
+CHARSET_REGEX = br"charset=([a-zA-Z0-9\-_]+)"
 
 def fix_encoding(file, item):
     logger = get_run_logger()
@@ -14,15 +17,32 @@ def fix_encoding(file, item):
             charset = None
             with open(os.path.join(FILES_DIR, file["path"]), "rb") as f:
                 for line in f.readlines():
-                    if b"charset=" in line:
-                        charset = line.split(b"charset=")[1].split(b'"')[0].decode("utf-8")
-                    content += line
-                    if charset is None:
-                        detector.feed(line)
-            detector.close()
+                    match = re.search(CHARSET_REGEX, line)
+                    if match:
+                        charset = match.group(1).decode("utf-8")
+                content += line
 
-            encoding = charset if charset else detector.result["encoding"]
-            decoded = content.decode(encoding, errors="strict")
+            potential_encodings = [
+                detector.detect(content)["encoding"],
+                charset,
+                "utf-8",
+                "iso-8859-1",
+                "windows-1252",
+                "windows-1251"
+            ]
+
+            decoded = None
+
+            for encoding in potential_encodings:
+                try:
+                    decoded = content.decode(encoding)
+                    break
+                except UnicodeDecodeError:
+                    continue
+
+            if decoded is None:
+                logger.error(f"Failed to decode file {file['path']} from item {item}")
+                return file
 
             return {
                 "stdin": decoded,
