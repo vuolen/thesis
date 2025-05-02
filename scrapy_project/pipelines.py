@@ -64,7 +64,7 @@ class CustomFilesPipeline(FilesPipeline):
         if not info.spider.name == "python-mailman3-mailing-lists":
             return super().media_failed(failure, request, info)
 
-        logging.info(failure.value)
+        logging.info(failure)
         
         if hasattr(failure, "value") and hasattr(failure.value, "response"):
             status = failure.value.response.status

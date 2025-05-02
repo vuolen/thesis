@@ -158,7 +158,7 @@ spiders = [
     (PythonDocsSpider.name, None),
     (PythonMailman2MailingListsSpider.name, "parse_threads"),
     (PythonPepSpider.name, None),
-    (PythonMailman3MailingListsSpider.name, "parse_threads"),
+    (PythonMailman3MailingListsSpider.name, None),
 ]
 
 parsers = {
