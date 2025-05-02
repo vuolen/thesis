@@ -40,7 +40,7 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
                 )
 
     def parse_list_page(self, response, listAddress):
-        for threadAnchor in response.css('a.thread-title').getall():
+        for threadAnchor in response.css('a.thread-title'):
             link = response.urljoin(threadAnchor.attrib["href"])
             name = threadAnchor.css("::text").get()
             yield BaseItem(
