@@ -18,19 +18,20 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
             yield scrapy.Request(archiveLink, callback=self.parse_list, cb_kwargs=cb_kwargs)
 
     def parse_list(self, response, listAddress):
-        page_links = response.css('a.page-link::attr(href)').getall()
-        if not page_links:
+        pages = [
+            int(pageText) 
+            for pageText in response.css('a.page-link::text').getall() 
+            if pageText.isdigit()
+        ]
+        if len(pages) == 0:
             yield response.follow(
                 response.url,
                 callback=self.parse_list_page,
                 cb_kwargs=dict(listAddress=listAddress)
             )
         else:
-            last_page = max([
-                int(pageText) 
-                for pageText in page_links
-                if pageText.isdigit()
-            ])
+            last_page = max(pages)
+
             for page in range(1, last_page + 1):
                 yield response.follow(
                     f"?page={page}",
