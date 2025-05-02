@@ -16,7 +16,6 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
             archiveLink = f"https://mail.python.org/archives/list/{listAddress}/latest"
             cb_kwargs = dict(listAddress=listAddress)
             yield scrapy.Request(archiveLink, callback=self.parse_list, cb_kwargs=cb_kwargs)
-            break
 
     def parse_list(self, response, listAddress):
         last_page = max([
@@ -31,7 +30,6 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
                 callback=self.parse_list_page,
                 cb_kwargs=dict(listAddress=listAddress)
             )
-            return
 
     def parse_list_page(self, response, listAddress):
         for threadAnchor in response.css('a.thread-title').getall():
