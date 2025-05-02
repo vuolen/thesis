@@ -34,9 +34,10 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
             return
 
     def parse_list_page(self, response, listAddress):
-        for threadLink in response.css('a.thread-title::attr(href)').getall():
-            link = response.urljoin(threadLink)
+        for threadAnchor in response.css('a.thread-title').getall():
+            link = response.urljoin(threadAnchor.attrib["href"])
+            name = threadAnchor.css("::text").get()
             yield BaseItem(
-                name=listAddress,
+                name=name,
                 file_urls = [link]
             )
