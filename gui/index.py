@@ -81,13 +81,6 @@ def get_item_by_id(collection: str, id: str):
                 return item
     return None
 
-def serve_item_url(collection: str, id: str, urlIndex: int):
-    item = get_item_by_id(collection, id)
-    if item:
-        ui.html(f'<iframe src="{item["file_urls"][urlIndex]}" style="width: calc(100vw - 2rem); height: calc(100vh - 2rem);" />')
-    else:
-        ui.label("Item not found")
-
 def navigate_to_item_url(collection: str, id: str, urlIndex: int):
     item = get_item_by_id(collection, id)
     if item:
@@ -97,29 +90,31 @@ def navigate_to_item_url(collection: str, id: str, urlIndex: int):
 
 @ui.page('/java-jep/{id}')
 def java_jep(id: str):
-    item = get_item_by_id("java-jep", id)
-    if item:
-        with open(os.path.join(FILES_DIR, item["files"][0]["path"]), "r") as file:
-            content = file.read()
-            ui.add_body_html(content)
-    else:
-        ui.label("Item not found")
+    navigate_to_item_url("java-jep", id, 0)
 
 @ui.page('/java-specs/{id}')
 def java_specs(id: str):
-    item = get_item_by_id("java-specs", id)
-    if item:
-        ui.html(f'<embed src="/files/{item["files"][0]["path"]}" type="application/pdf" style="width: calc(100vw - 2rem); height: calc(100vh - 2rem);" />')
-    else:
-        ui.label("Item not found")
+    navigate_to_item_url("java-specs", id, 0)
+
+@ui.page('/cpp-mailing-lists/{id}')
+def cpp_mailing_lists(id: str):
+    navigate_to_item_url("cpp-mailing-lists", id, -1)
+
+@ui.page("/cpp-papers/{id}")
+def cpp_papers(id: str):
+    navigate_to_item_url("cpp-papers", id, 0)
 
 @ui.page('/python-pep/{id}')
 def python_pep(id: str):
     navigate_to_item_url("python-pep", id, 0)
 
-@ui.page('/cpp-mailing-lists/{id}')
-def cpp_mailing_lists(id: str):
-    navigate_to_item_url("cpp-mailing-lists", id, -1)
+@ui.page('/python-discuss/{id}')
+def python_discuss(id: str):
+    item = get_item_by_id(collection, id)
+    if item:
+        ui.navigate.to(item["file_urls"][0].split("/posts.json")[0])
+    else:
+        ui.label("Item not found")
 
 app.add_static_files('/files', FILES_DIR)
 
