@@ -10,6 +10,7 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
 
     custom_settings = {
         "DOWNLOAD_DELAY": 5,
+        "HTTPCACHE_ENABLED": True,
     }
 
     # email list -> search -> page -> message -> thread
