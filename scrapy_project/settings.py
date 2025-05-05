@@ -15,8 +15,7 @@ NEWSPIDER_MODULE = "scrapy_project.spiders"
 MEDIA_ALLOW_REDIRECTS = True
 ITEM_PIPELINES = {
     "scrapy_project.pipelines.PreProcessPipeline": 1,
-    "scrapy_project.pipelines.CustomFilesPipeline": 2,
-#     "thesis_scraper.pipelines.DeduplicationPipeline": 2,
+    "scrapy_project.pipelines.DeduplicationPipeline": 2,
 #     "thesis_scraper.pipelines.DownloadFilesPipeline": 3,
 #     "thesis_scraper.pipelines.ExportPipeline": 4,
 }

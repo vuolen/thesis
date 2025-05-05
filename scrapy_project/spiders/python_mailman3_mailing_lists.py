@@ -1,6 +1,7 @@
 import scrapy
-
+import urllib
 from scrapy_project.items import BaseItem
+from common.patterns import PATTERNS
 
 class PythonMailman3MailingListsSpider(scrapy.Spider):
     name = "python-mailman3-mailing-lists"
@@ -8,16 +9,27 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
     start_urls = ["https://mail.python.org/archives/?count=200"]
 
     custom_settings = {
-        "DOWNLOAD_DELAY": 10,
+        "DOWNLOAD_DELAY": 5,
     }
 
-    def parse(self, response):
-        for listAddress in response.css('span.list-address::text').getall():
-            archiveLink = f"https://mail.python.org/archives/list/{listAddress}/latest"
-            cb_kwargs = dict(listAddress=listAddress)
-            yield scrapy.Request(archiveLink, callback=self.parse_list, cb_kwargs=cb_kwargs)
+    # email list -> search -> page -> message -> thread
 
-    def parse_list(self, response, listAddress):
+    def parse(self, response):
+        for mlist in response.css('span.list-address::text').getall():
+            mlist = mlist.strip()
+            for feature, patterns in PATTERNS.items():
+                for pattern in patterns:
+                    qstr = urllib.parse.urlencode({
+                        "mlist": mlist,
+                        "q": f'"{pattern}"',
+                    })
+                    yield response.follow(
+                        f"https://mail.python.org/archives/search?{qstr}",
+                        callback=self.parse_search,
+                        cb_kwargs=dict(mlist=mlist, feature=feature, pattern=pattern)
+                    )
+
+    def parse_search(self, response, mlist, feature, pattern):
         pages = [
             int(pageText) 
             for pageText in response.css('a.page-link::text').getall() 
@@ -26,24 +38,46 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
         if len(pages) == 0:
             yield response.follow(
                 response.url,
-                callback=self.parse_list_page,
-                cb_kwargs=dict(listAddress=listAddress)
+                callback=self.parse_search_page,
+                cb_kwargs=dict(mlist=mlist, feature=feature, pattern=pattern, page=1),
             )
         else:
             last_page = max(pages)
 
             for page in range(1, last_page + 1):
+                qstr = urllib.parse.urlencode({
+                    "mlist": mlist,
+                    "q": f'"{pattern}"',
+                    "page": page,
+                })
                 yield response.follow(
-                    f"?page={page}",
-                    callback=self.parse_list_page,
-                    cb_kwargs=dict(listAddress=listAddress)
+                    response.urljoin(f"?{qstr}"),
+                    callback=self.parse_search_page,
+                    cb_kwargs=dict(mlist=mlist, feature=feature, pattern=pattern, page=page),
                 )
 
-    def parse_list_page(self, response, listAddress):
-        for threadAnchor in response.css('a.thread-title'):
-            link = response.urljoin(threadAnchor.attrib["href"])
-            name = threadAnchor.css("::text").get()
-            yield BaseItem(
-                name=name,
-                file_urls = [link]
+    def parse_search_page(self, response, mlist, feature, pattern, page):
+        for messageAnchor in response.css('span.thread-title a'):
+            yield response.follow(
+                messageAnchor.attrib["href"],
+                callback=self.parse_message,
+                cb_kwargs=dict(mlist=mlist, feature=feature, pattern=pattern, page=page),
             )
+
+    def parse_message(self, response, mlist, feature, pattern, page):
+        threadName = response.css('h1::text').get()
+        for anchor in response.css('a'):
+            text = anchor.css("span::text").get()
+            if text != None and "Back to the thread" in text:
+                threadLink = anchor.attrib["href"]
+                threadLink = threadLink.split("#")[0]
+                yield BaseItem(
+                    name=threadName,
+                    file_urls=[response.urljoin(threadLink)],
+                    scraped_from={
+                        "mlist": mlist,
+                        "feature": feature,
+                        "pattern": pattern,
+                        "page": page,
+                    }
+                )
