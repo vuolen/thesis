@@ -110,7 +110,7 @@ def python_pep(id: str):
 
 @ui.page('/python-discuss/{id}')
 def python_discuss(id: str):
-    item = get_item_by_id(collection, id)
+    item = get_item_by_id("python-discuss", id)
     if item:
         ui.navigate.to(item["file_urls"][0].split("/posts.json")[0])
     else:
