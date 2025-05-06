@@ -16,7 +16,7 @@ MEDIA_ALLOW_REDIRECTS = True
 ITEM_PIPELINES = {
     "scrapy_project.pipelines.PreProcessPipeline": 1,
     "scrapy_project.pipelines.DeduplicationPipeline": 2,
-    "scrapy.pipelines.files.FilesPipeline": 3,
+    "scrapy_project.pipelines.CustomFilesPipeline": 3,
 #     "thesis_scraper.pipelines.DownloadFilesPipeline": 3,
 #     "thesis_scraper.pipelines.ExportPipeline": 4,
 }

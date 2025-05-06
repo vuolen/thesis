@@ -7,6 +7,11 @@ import datetime
 import hashlib
 from scrapy.utils.serialize import ScrapyJSONEncoder 
 from scrapy.exceptions import DropItem
+from scrapy.pipelines.files import FilesPipeline
+from pathlib import Path
+from scrapy.utils.python import to_bytes
+from typing import cast
+import mimetypes
 
 def jsons_item(item):
     encoder = ScrapyJSONEncoder(indent=4)
@@ -34,3 +39,19 @@ class DeduplicationPipeline:
         else:
             self.seen[spider.name].add(item["id"])
             return item
+        
+class CustomFilesPipeline(FilesPipeline):
+    def file_path(self, request, response=None, info=None, *, item=None):
+        path = super().file_path(request, response, info, item=item)
+
+        # Super does not support a path like .tar.bz2
+        # it saves it as .tar
+        # this adds the extension back
+        _, encoding = mimetypes.guess_type(path)
+        if encoding is not None:
+            for ext, enc in mimetypes.types_map.items():
+                if enc == encoding:
+                    path += ext
+                    break
+
+        return path
