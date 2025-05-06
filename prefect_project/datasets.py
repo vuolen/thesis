@@ -153,16 +153,15 @@ spiders = [
     (CppMailingListsSpider.name, None),
     (JavaJepSpider.name, None),
     (JavaSpecsSpider.name, None),
-    (OpenJDKMailman2MailingListsSpider.name, "parse_threads"),
+    (OpenJDKMailman2MailingListsSpider.name, None),
     (PythonDiscussSpider.name, None),
     (PythonDocsSpider.name, None),
-    (PythonMailman2MailingListsSpider.name, "parse_threads"),
+    (PythonMailman2MailingListsSpider.name, None),
     (PythonPepSpider.name, None),
     (PythonMailman3MailingListsSpider.name, None),
 ]
 
 parsers = {
-    "parse_threads": parse_threads,
     "cpp_papers": cpp_papers.to_documents,
 }
 
