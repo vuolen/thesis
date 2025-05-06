@@ -47,9 +47,9 @@ class CustomFilesPipeline(FilesPipeline):
         # Super does not support a path like .tar.bz2
         # it saves it as .tar
         # this adds the extension back
-        _, encoding = mimetypes.guess_type(path)
+        _, encoding = mimetypes.guess_type(request.url)
         if encoding is not None:
-            for ext, enc in mimetypes.types_map.items():
+            for ext, enc in mimetypes.encodings_map.items():
                 if enc == encoding:
                     path += ext
                     break

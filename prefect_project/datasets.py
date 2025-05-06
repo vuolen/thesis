@@ -1,13 +1,12 @@
 import os
 import json
 import asyncio
-from aiostream import Stream, stream, pipe, aiter_utils
-from prefect import task, flow, serve
+from aiostream import stream, pipe, aiter_utils
+from prefect import flow, serve
 from prefect.context import FlowRunContext
 from prefect.logging import get_run_logger
 from prefect.cache_policies import DEFAULT 
 from prefect_project import cpp_papers, scrapyd_client
-from prefect_project.threadparser import parse_threads
 from scrapy_project.items import BaseItem
 from scrapy_project.spiders.cpp_papers import CppPapersSpider
 from scrapy_project.spiders.cpp_mailing_lists import CppMailingListsSpider
