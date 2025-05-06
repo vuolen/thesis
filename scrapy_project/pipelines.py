@@ -44,14 +44,11 @@ class CustomFilesPipeline(FilesPipeline):
     def file_path(self, request, response=None, info=None, *, item=None):
         path = super().file_path(request, response, info, item=item)
 
-        # Super does not support a path like .tar.bz2
-        # it saves it as .tar
-        # this adds the extension back
-        _, encoding = mimetypes.guess_type(request.url)
-        if encoding is not None:
-            for ext, enc in mimetypes.encodings_map.items():
-                if enc == encoding:
-                    path += ext
-                    break
+        body = path.split(".")[0]
+
+        if request.url.endswith(".tar.gz"):
+            path = f"{body}.tar.gz"
+        elif request.url.endswith(".tar.bz2"):
+            path = f"{body}.tar.bz2"
 
         return path
