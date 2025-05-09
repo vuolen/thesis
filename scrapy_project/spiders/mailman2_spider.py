@@ -8,7 +8,6 @@ class Mailman2Spider(scrapy.Spider):
             listName = listLink.css("::text").get()
             archiveLink = listLink.attrib["href"].replace("listinfo", "/pipermail")
             yield response.follow(archiveLink, self.parseArchive, cb_kwargs=dict(listName=listName))
-            return
 
     def parseArchive(self, response, listName):
         for byThreadLink in response.css('a[href$="thread.html"]::attr(href)').getall():
