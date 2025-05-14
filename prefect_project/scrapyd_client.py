@@ -21,7 +21,7 @@ async def listjobs():
 
 async def get_running_and_pending_jobs():
     jobs = await listjobs()
-    return jobs["running"] + jobs["pending"]
+    return jobs.get("running", []) + jobs.get("pending", [])
 
 async def is_spider_running(spider_name):
     print(f"Checking if spider {spider_name} is running")
