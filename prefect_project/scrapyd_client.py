@@ -6,8 +6,10 @@ import aiohttp
 
 SCRAPYD_URL = os.getenv("SCRAPYD_URL")
 
+timeout = aiohttp.ClientTimeout(total=60 * 60)
+
 async def listjobs():
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         async with session.get(
             f"{SCRAPYD_URL}/listjobs.json",
             params={"project": "scrapy_project"},
@@ -44,7 +46,7 @@ async def schedule_spider(spider_name, job_id, settings):
         ]
     ]
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         async with session.post(
             f"{SCRAPYD_URL}/schedule.json",
             data=data,
@@ -56,7 +58,7 @@ async def schedule_spider(spider_name, job_id, settings):
 
 async def kill_job(job_id, force=True):
     print(f"Canceling job {job_id}.")
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession(timeout=timeout) as session:
         async with session.post(
             f"{SCRAPYD_URL}/cancel.json",
             data={
