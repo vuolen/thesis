@@ -42,7 +42,7 @@ async def run_scraper(spider_name: str) -> AsyncGenerator[BaseItem, None]:
 
     created_job = await scrapyd_client.schedule_spider(spider_name, job_id, settings = {
         "FILES_STORE": FILES_DIR,
-        "HTTPCACHE_ENABLED": False
+        "HTTPCACHE_ENABLED": True
     })
     logger.info(f"Scheduled job {created_job['jobid']} for spider {spider_name}")
 
