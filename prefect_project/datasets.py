@@ -77,6 +77,7 @@ async def run_scraper(spider_name: str) -> AsyncGenerator[BaseItem, None]:
 
         if log_file is not None:
             line = log_file.readline()
+            logger.debug(f"Reading log file {log_file_path}")
             while line:
                 logger.info(line.strip())
                 line = log_file.readline()
@@ -90,7 +91,7 @@ async def run_scraper(spider_name: str) -> AsyncGenerator[BaseItem, None]:
         if finished:
             break
 
-        await asyncio.sleep(5)
+        await asyncio.sleep(10)
 
 Document = dict
 AnnotatedDocument = dict

@@ -2,6 +2,7 @@ import os
 import asyncio
 from aiohttp import ClientTimeout
 from aiohttp_retry import RetryClient, ExponentialRetry
+from prefect import get_run_logger
 
 SCRAPYD_URL = os.getenv("SCRAPYD_URL")
 
@@ -14,6 +15,8 @@ def get_client():
     )
 
 async def listjobs():
+    logger = get_run_logger()
+    logger.debug("Listing jobs")
     async with get_client() as session:
         async with session.get(
                 f"{SCRAPYD_URL}/listjobs.json",
