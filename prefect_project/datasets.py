@@ -53,6 +53,7 @@ async def run_scraper(spider_name: str) -> AsyncGenerator[BaseItem, None]:
 
     while True:
         jobs = await scrapyd_client.listjobs()
+
         for job in jobs["running"] + jobs["finished"]:
             if job["id"] == created_job["jobid"]:
                 if log_file_path is None:

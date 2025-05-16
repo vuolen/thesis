@@ -1,22 +1,27 @@
 import os
-import requests
-import time
 import asyncio
-import aiohttp
+from aiohttp import ClientTimeout
+from aiohttp_retry import RetryClient, ExponentialRetry
 
 SCRAPYD_URL = os.getenv("SCRAPYD_URL")
 
-timeout = aiohttp.ClientTimeout(total=60 * 60)
+RETRY_OPTIONS = ExponentialRetry(attempts=100)
+
+def get_client():
+    return RetryClient(
+        retry_options=RETRY_OPTIONS,
+        timeout=ClientTimeout(total=20),
+    )
 
 async def listjobs():
-    async with aiohttp.ClientSession(timeout=timeout) as session:
+    async with get_client() as session:
         async with session.get(
-            f"{SCRAPYD_URL}/listjobs.json",
-            params={"project": "scrapy_project"},
-            raise_for_status=True
-        ) as resp:
-            jobs = await resp.json()
-            return jobs
+                f"{SCRAPYD_URL}/listjobs.json",
+                params={"project": "scrapy_project"},
+                raise_for_status=True
+            ) as resp:
+                jobs = await resp.json()
+                return jobs
         
 
 async def get_running_and_pending_jobs():
@@ -46,7 +51,7 @@ async def schedule_spider(spider_name, job_id, settings):
         ]
     ]
 
-    async with aiohttp.ClientSession(timeout=timeout) as session:
+    async with get_client() as session:
         async with session.post(
             f"{SCRAPYD_URL}/schedule.json",
             data=data,
@@ -58,7 +63,7 @@ async def schedule_spider(spider_name, job_id, settings):
 
 async def kill_job(job_id, force=True):
     print(f"Canceling job {job_id}.")
-    async with aiohttp.ClientSession(timeout=timeout) as session:
+    async with get_client() as session:
         async with session.post(
             f"{SCRAPYD_URL}/cancel.json",
             data={
