@@ -15,6 +15,9 @@ python-dotenv = "*"
 aiostream = "*"
 chardet = "*"
 aiohttp-retry = "*"
+aiofiles = "*"
+aioreactive = "*"
+reactivex = "*"
 
 [dev-packages]
 

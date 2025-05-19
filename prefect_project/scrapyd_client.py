@@ -23,19 +23,26 @@ async def listjobs():
                 params={"project": "scrapy_project"},
                 raise_for_status=True
             ) as resp:
-                jobs = await resp.json()
+                raw_jobs = await resp.json()
+                jobs = {}
+                for job in raw_jobs.get("pending", []):
+                    job["status"] = "pending"
+                    jobs[job["id"]] = job
+                for job in raw_jobs.get("running", []):
+                    job["status"] = "running"
+                    jobs[job["id"]] = job
+                for job in raw_jobs.get("finished", []):
+                    job["status"] = "finished"
+                    jobs[job["id"]] = job
+
                 return jobs
         
 
-async def get_running_and_pending_jobs():
-    jobs = await listjobs()
-    return jobs.get("running", []) + jobs.get("pending", [])
-
 async def is_spider_running(spider_name):
     print(f"Checking if spider {spider_name} is running")
-    jobs = await get_running_and_pending_jobs()
-    for job in jobs:
-        if job["spider"] == spider_name:
+    jobs = await listjobs()
+    for job in jobs.values():
+        if job["spider"] == spider_name and job["status"] in ["pending", "running"]:
             return True
     return False
 
@@ -81,7 +88,12 @@ async def kill_job(job_id, force=True):
 async def cleanup(force=True):
     print(f"Starting cleanup")
     while True:
-        running_and_pending = await get_running_and_pending_jobs()
+        jobs = await listjobs()
+
+        running_and_pending = [
+            job for job in jobs.values()
+            if job["status"] in ["running", "pending"]
+        ]
 
         if len(running_and_pending) == 0:
             break
