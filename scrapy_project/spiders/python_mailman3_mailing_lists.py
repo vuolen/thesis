@@ -13,11 +13,19 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
         "HTTPCACHE_ENABLED": True,
     }
 
+    def list_predicate(self, listName):
+        if listName.endswith("checkins") or listName.endswith("status") or listName.endswith("commits"):
+            return False
+        return True
+
     # email list -> search -> page -> message -> thread
 
     def parse(self, response):
         for mlist in response.css('span.list-address::text').getall():
             mlist = mlist.strip()
+            if not self.list_predicate(mlist):
+                self.logger.info(f"Skipping list {mlist} based on predicate")
+                continue
             for feature, patterns in PATTERNS.items():
                 for pattern in patterns:
                     qstr = urllib.parse.urlencode({

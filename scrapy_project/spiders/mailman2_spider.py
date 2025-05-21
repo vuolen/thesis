@@ -7,6 +7,9 @@ class Mailman2Spider(scrapy.Spider):
         for listLink in response.css('table tr td a[href^="listinfo"]'):
             listName = listLink.css("::text").get()
             archiveLink = listLink.attrib["href"].replace("listinfo", "/pipermail")
+            if self.list_predicate is not None and not self.list_predicate(listName):
+                self.logger.info(f"Skipping list {listName} based on predicate")
+                continue
             yield response.follow(archiveLink, self.parseArchive, cb_kwargs=dict(listName=listName))
 
     def parseArchive(self, response, listName):
