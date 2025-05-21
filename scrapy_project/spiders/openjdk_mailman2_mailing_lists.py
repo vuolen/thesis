@@ -7,6 +7,6 @@ class OpenJDKMailman2MailingListsSpider(Mailman2Spider):
     download_delay = 1
 
     def list_predicate(self, listName):
-        if listName.endswith("changes"):
+        if listName.lower().endswith("changes"):
             return False
         return True

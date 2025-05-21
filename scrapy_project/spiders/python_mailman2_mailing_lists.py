@@ -6,6 +6,6 @@ class PythonMailman2MailingListsSpider(Mailman2Spider):
     start_urls = ["https://mail.python.org/mailman/listinfo"]
 
     def list_predicate(self, listName):
-        if listName == "python-list":
+        if listName.lower() == "python-list":
             return False
         return True
