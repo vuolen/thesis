@@ -11,6 +11,7 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
     custom_settings = {
         "DOWNLOAD_DELAY": 5,
         "HTTPCACHE_ENABLED": True,
+        "HTTPCACHE_IGNORE_HTTP_CODES": [500, 502],
     }
 
     def list_predicate(self, listName):
