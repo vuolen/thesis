@@ -29,9 +29,7 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
                 self.logger.info(f"Skipping list {mlist} based on predicate")
                 continue
             for feature in PATTERNS:
-                boolean_q = [
-                    f'"{pattern}"' for pattern in PATTERNS[feature]
-                ].join(" OR ")
+                boolean_q = " OR ".join([f'"{pattern}"' for pattern in PATTERNS[feature]])
                 qstr = urllib.parse.urlencode({
                     "mlist": mlist,
                     "q": boolean_q,
