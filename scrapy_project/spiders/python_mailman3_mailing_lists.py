@@ -16,7 +16,7 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
 
     def list_predicate(self, listName):
         lowered = listName.lower()
-        if lowered.endswith("changes") or lowered.endswith("commits") or lowered.endswith("checkins"):
+        if lowered.endswith("changes") or lowered.endswith("commits") or lowered.endswith("checkins") or lowered == "python-list":
             return False
         return True
 
@@ -28,19 +28,21 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
             if not self.list_predicate(mlist):
                 self.logger.info(f"Skipping list {mlist} based on predicate")
                 continue
-            for feature, patterns in PATTERNS.items():
-                for pattern in patterns:
-                    qstr = urllib.parse.urlencode({
-                        "mlist": mlist,
-                        "q": f'"{pattern}"',
-                    })
-                    yield response.follow(
-                        f"https://mail.python.org/archives/search?{qstr}",
-                        callback=self.parse_search,
-                        cb_kwargs=dict(mlist=mlist, feature=feature, pattern=pattern)
-                    )
+            for feature in PATTERNS:
+                boolean_q = [
+                    f'"{pattern}"' for pattern in PATTERNS[feature]
+                ].join(" OR ")
+                qstr = urllib.parse.urlencode({
+                    "mlist": mlist,
+                    "q": boolean_q,
+                })
+                yield response.follow(
+                    f"https://mail.python.org/archives/search?{qstr}",
+                    callback=self.parse_search,
+                    cb_kwargs=dict(mlist=mlist, feature=feature, search=boolean_q)
+                )
 
-    def parse_search(self, response, mlist, feature, pattern):
+    def parse_search(self, response, mlist, feature, search):
         pages = [
             int(pageText) 
             for pageText in response.css('a.page-link::text').getall() 
@@ -50,32 +52,35 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
             yield response.follow(
                 response.url,
                 callback=self.parse_search_page,
-                cb_kwargs=dict(mlist=mlist, feature=feature, pattern=pattern, page=1),
+                cb_kwargs=dict(mlist=mlist, feature=feature, search=search, page=1),
             )
         else:
             last_page = max(pages)
 
+            pages_to_scrape = last_page + last_page * 10
+            self.logger.info(f"Scraping {pages_to_scrape} pages for {mlist} with feature {feature} and search {search}, takes around {pages_to_scrape * 5 // 60} minutes")
+
             for page in range(1, last_page + 1):
                 qstr = urllib.parse.urlencode({
                     "mlist": mlist,
-                    "q": f'"{pattern}"',
+                    "q": search,
                     "page": page,
                 })
                 yield response.follow(
                     response.urljoin(f"?{qstr}"),
                     callback=self.parse_search_page,
-                    cb_kwargs=dict(mlist=mlist, feature=feature, pattern=pattern, page=page),
+                    cb_kwargs=dict(mlist=mlist, feature=feature, search=search, page=page),
                 )
 
-    def parse_search_page(self, response, mlist, feature, pattern, page):
+    def parse_search_page(self, response, mlist, feature, search, page):
         for messageAnchor in response.css('span.thread-title a'):
             yield response.follow(
                 messageAnchor.attrib["href"],
                 callback=self.parse_message,
-                cb_kwargs=dict(mlist=mlist, feature=feature, pattern=pattern, page=page),
+                cb_kwargs=dict(mlist=mlist, feature=feature, search=search, page=page),
             )
 
-    def parse_message(self, response, mlist, feature, pattern, page):
+    def parse_message(self, response, mlist, feature, search, page):
         threadName = response.css('h1::text').get()
         for anchor in response.css('a'):
             text = anchor.css("span::text").get()
@@ -88,7 +93,7 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
                     scraped_from={
                         "mlist": mlist,
                         "feature": feature,
-                        "pattern": pattern,
+                        "search": search,
                         "page": page,
                     }
                 )
