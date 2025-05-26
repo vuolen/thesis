@@ -1,10 +1,9 @@
 import os
 import asyncio
 from prefect import task, get_run_logger
-from prefect.cache_policies import NO_CACHE
 from prefect_project import scrapyd_client, env
 
-@task(cache_policy=NO_CACHE)
+@task
 async def run_scraper(spider_name: str, job_id: str, args={}):
     logger = get_run_logger()
 
