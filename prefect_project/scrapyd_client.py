@@ -39,7 +39,7 @@ async def listjobs():
         
 
 async def is_spider_running(spider_name):
-    print(f"Checking if spider {spider_name} is running")
+    get_run_logger().info(f"Checking if spider {spider_name} is running")
     jobs = await listjobs()
     for job in jobs.values():
         if job["spider"] == spider_name and job["status"] in ["pending", "running"]:
@@ -47,9 +47,9 @@ async def is_spider_running(spider_name):
     return False
 
 
-async def schedule_spider(spider_name, job_id, settings):
-    print(f"Deploying spider {spider_name}, with settings {settings}")
-
+async def schedule_spider(spider_name, job_id, settings={}, args={}):
+    logger = get_run_logger()
+    logger.info(f"Deploying spider {spider_name}, with settings {settings} and args {args}")
 
     data = [
         ("project", "scrapy_project"),
@@ -58,6 +58,10 @@ async def schedule_spider(spider_name, job_id, settings):
         *[
             ("setting", f"{key}={value}")
             for key, value in settings.items()
+        ],
+        *[
+            (key, value)
+            for key, value in args.items()
         ]
     ]
 
@@ -68,11 +72,11 @@ async def schedule_spider(spider_name, job_id, settings):
             raise_for_status=True
         ) as response:
             job = await response.json()
-            print(f"Deployed spider {spider_name}.")
+            logger.info(f"Deployed spider {spider_name}.")
             return job
 
 async def kill_job(job_id, force=True):
-    print(f"Canceling job {job_id}.")
+    get_run_logger().info(f"Canceling job {job_id}.")
     async with get_client() as session:
         async with session.post(
             f"{SCRAPYD_URL}/cancel.json",
@@ -86,7 +90,8 @@ async def kill_job(job_id, force=True):
             return await resp.json()
         
 async def cleanup(force=True):
-    print(f"Starting cleanup")
+    logger = get_run_logger()
+    logger.info(f"Starting cleanup")
     while True:
         jobs = await listjobs()
 
@@ -103,5 +108,5 @@ async def cleanup(force=True):
 
         await asyncio.sleep(5)
 
-    print("Cleanup done")
+    logger.info("Cleanup done")
             

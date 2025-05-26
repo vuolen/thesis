@@ -25,7 +25,7 @@ if [ "$1" == "server" ]; then
     pipenv run prefect server start
 elif [ "$1" == "deploy" ]; then
     echo "Running deploy"
-    pipenv run python -m prefect_project.datasets
+    pipenv run python -m prefect_project.datasets_seq
 elif [ "$1" == "scrapyd" ]; then
     echo "Running scrapyd"
     pipenv run scrapyd 
