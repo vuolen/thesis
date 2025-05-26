@@ -80,18 +80,22 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
 
     def parse_message(self, response, mlist, feature, search, page):
         threadName = response.css('h1::text').get()
+        threadLink = None
         for anchor in response.css('a'):
             text = anchor.css("span::text").get()
             if text != None and "Back to the thread" in text:
                 threadLink = anchor.attrib["href"]
                 threadLink = threadLink.split("#")[0]
-                yield BaseItem(
-                    name=threadName,
-                    file_urls=[response.urljoin(threadLink)],
-                    scraped_from={
-                        "mlist": mlist,
-                        "feature": feature,
-                        "search": search,
-                        "page": page,
-                    }
-                )
+                break
+
+        yield BaseItem(
+            name=threadName,
+            file_urls=[response.url],
+            scraped_from={
+                "threadLink": threadLink,
+                "mlist": mlist,
+                "feature": feature,
+                "search": search,
+                "page": page,
+            }
+        )

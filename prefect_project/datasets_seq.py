@@ -4,7 +4,7 @@ import asyncio
 import aiofiles
 from prefect import flow, serve, task
 from prefect.logging import get_run_logger
-from prefect_project import cpp_papers, openjdk_mail, env, scrapy_tasks, util
+from prefect_project import cpp_papers, openjdk_mail, env, python_mailman3, scrapy_tasks, util
 from scrapy_project.spiders.cpp_papers import CppPapersSpider
 from scrapy_project.spiders.cpp_mailing_lists import CppMailingListsSpider
 from scrapy_project.spiders.java_jep import JavaJepSpider
@@ -117,12 +117,13 @@ spiders = [
     (PythonDiscussSpider.name, None),
     (PythonDocsSpider.name, None),
     (PythonPepSpider.name, None),
-    (PythonMailman3MailingListsSpider.name, None),
+    (PythonMailman3MailingListsSpider.name, "python_mailman3_mailing_lists"),
 ]
 
 parsers = {
     "cpp_papers": cpp_papers.to_documents,
     "openjdk_mailman2_digest": openjdk_mail.to_documents,
+    "python_mailman3_mailing_lists": python_mailman3.to_documents,
 }
 
 def main():
