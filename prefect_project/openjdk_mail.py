@@ -52,7 +52,7 @@ async def to_documents(items):
     async with aiofiles.open(args_file_path, "w") as f:
         for arg in thread_scraper_args:
             await f.write(json.dumps(arg) + "\n")
-    job_id = FlowRunContext.get().flow_run.id + "-thread"
+    job_id = str(FlowRunContext.get().flow_run.id) + "-thread"
     thread_scraper_job = await scrapy_tasks.run_scraper("openjdk-mailman2-thread", job_id, args={"arguments_file": args_file_path})
 
     return await util.read_jsonl_from_file(thread_scraper_job["items_url"])
