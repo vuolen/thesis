@@ -34,7 +34,6 @@ async def parse_items(items, parser_name):
 @task
 async def annotate_documents(documents):
     logger = get_run_logger()
-    annotated_documents = []
     for document in documents:
         document_matches = {}
         for file in document["files"]:
@@ -54,7 +53,7 @@ async def annotate_documents(documents):
         
         document["matches"] = document_matches
 
-    return annotated_documents
+    return documents
  
 @task
 def filter_documents(documents):
