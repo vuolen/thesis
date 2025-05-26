@@ -26,7 +26,9 @@ async def log_from_file(file_path):
 
 @task
 async def parse_items(items, parser_name):
-    parser = parsers.get(parser_name, lambda x: [x])
+    parser = parsers.get(parser_name)
+    if parser is None:
+        return items
     return await parser(items)
 
 @task
@@ -67,7 +69,6 @@ async def write_documents_to_file(documents, output_file_path):
     async with aiofiles.open(output_file_path, "w") as outf:
         for document in documents:
             await outf.write(json.dumps(document) + "\n")
-
 
 
 @flow(
