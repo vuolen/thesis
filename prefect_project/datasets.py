@@ -166,15 +166,25 @@ async def cleanup_flow(flow, flow_run, state):
     on_cancellation=[cleanup_flow],
     on_crashed=[cleanup_flow]
 )
-async def collection_flow(spider_name, parser_name):
+async def collection_flow(spider_name, parser_name, cached_job=None):
 
     logger = get_run_logger()
     parser = parsers.get(parser_name, lambda x: [x])
     output_file_path = os.path.join(ITEM_FEEDS_DIR, f"{spider_name}-final.jsonl")
 
-    jobid = await run_scraper(spider_name)
-    job_status_subject = create_job_status_subject(jobid)
+    if cached_job is None:
+        jobid = await run_scraper(spider_name)
+        job_status_subject = create_job_status_subject(jobid)
+        items_stream = create_items_observable(job_status_subject)
+    else:
+        items_stream = create_file_lines_observable(f"{ITEM_FEEDS_DIR}/scrapy_project/{spider_name}/{cached_job}.jl")
 
+    documents_to_save = rx.pipe(
+        items_stream,
+        rx.flat_map(lambda item: rx.from_iterable(parser(item))),
+        rx.map_async(lambda document: annotate_documents(document)),
+        rx.filter(lambda annotated_document: sum(annotated_document["matches"].values()) > 0),
+    )
 
     logs = create_logs_observable(job_status_subject)
     async def logs_asend(line):
@@ -189,12 +199,6 @@ async def collection_flow(spider_name, parser_name):
         close=logs_aclose,
     )
 
-    documents_to_save = rx.pipe(
-        create_items_observable(job_status_subject),
-        rx.flat_map(lambda item: rx.from_iterable(parser(item))),
-        rx.map_async(lambda document: annotate_documents(document)),
-        rx.filter(lambda annotated_document: sum(annotated_document["matches"].values()) > 0),
-    )
 
     async with aiofiles.open(output_file_path, "w") as outf:
         async for document in rx.to_async_iterable(documents_to_save):
