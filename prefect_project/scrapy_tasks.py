@@ -1,12 +1,11 @@
 import os
 import asyncio
 from prefect import task, get_run_logger
-from prefect.context import FlowRunContext
+from prefect.cache_policies import NO_CACHE
 from prefect_project import scrapyd_client, env
 
-@task
-async def run_scraper(spider_name: str, args={}):
-    job_id = FlowRunContext.get().flow_run.id
+@task(cache_policy=NO_CACHE)
+async def run_scraper(spider_name: str, job_id: str, args={}):
     logger = get_run_logger()
 
     # with open("/home/lennu/code/thesis/data/feeds/scrapy_project/openjdk-mailman2-mailing-lists/bd1083e7-7520-42e2-bb8b-4c2d1a40344e.jl", "r") as items:

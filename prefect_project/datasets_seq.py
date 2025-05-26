@@ -15,6 +15,7 @@ from scrapy_project.spiders.python_discuss import PythonDiscussSpider
 from scrapy_project.spiders.python_docs import PythonDocsSpider
 from scrapy_project.spiders.python_mailman3_mailing_lists import PythonMailman3MailingListsSpider
 from .matcher import ripgrepAll
+from prefect.context import FlowRunContext
 
 
 @task
@@ -82,7 +83,8 @@ async def collection_flow(spider_name, parser_name, cached_job=None):
     output_file_path = os.path.join(env.ITEM_FEEDS_DIR, f"{spider_name}-final.jsonl")
 
     if cached_job is None:
-        finished_job = await scrapy_tasks.run_scraper(spider_name)
+        job_id = FlowRunContext.get().flow_run.id
+        finished_job = await scrapy_tasks.run_scraper(spider_name, job_id)
         logger.info(f"Job finished: {finished_job}")
         items_file_path = finished_job["items_url"]
         log_file_path = finished_job["log_url"]
