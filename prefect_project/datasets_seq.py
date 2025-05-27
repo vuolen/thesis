@@ -38,28 +38,35 @@ async def annotate_documents(documents):
     documents_queue = asyncio.Queue()
     annotated_documents_queue = asyncio.Queue()
 
+    async def annotate(document):
+        document_matches = {}
+        for file in document["files"]:
+            try:
+                if "stdin" in file:
+                    file_matches = await ripgrepAll("-", stdin=file["stdin"])
+                elif "path" in file:
+                    fullPath = os.path.join(env.FILES_DIR, file["path"])
+                    file_matches = await ripgrepAll(fullPath)
+
+                for k,v in file_matches.items():
+                    document_matches[k] = document_matches.get(k, 0) + v
+
+            except Exception as e:
+                logger.error(f"Error processing file {file.get('path', file.get('stdin'))} from document {document}")
+                logger.error(e)
+        document["matches"] = document_matches
+        return document
+
     async def task():
         while True:
-            document = await documents_queue.get()
-            document_matches = {}
-            for file in document["files"]:
-                try:
-                    if "stdin" in file:
-                        file_matches = await ripgrepAll("-", stdin=file["stdin"])
-                    elif "path" in file:
-                        fullPath = os.path.join(env.FILES_DIR, file["path"])
-                        file_matches = await ripgrepAll(fullPath)
-
-                    for k,v in file_matches.items():
-                        document_matches[k] = document_matches.get(k, 0) + v
-
-                except Exception as e:
-                    logger.error(f"Error processing file {file.get('path', file.get('stdin'))} from document {document}")
-                    logger.error(e)
-            
-            document["matches"] = document_matches
-            await annotated_documents_queue.put(document)
-            documents_queue.task_done()
+            try:
+                document = await documents_queue.get()
+                annotated_document = await annotate(document)
+                await annotated_documents_queue.put(annotated_document)
+            except Exception as e:
+                logger.error(f"Error annotating document: {e}")
+            finally:
+                documents_queue.task_done()
 
 
     for document in documents:
