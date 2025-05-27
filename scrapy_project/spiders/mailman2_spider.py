@@ -49,7 +49,8 @@ class Mailman2ThreadSpider(scrapy.Spider):
             texts = anchors.css("::text").getall()
             if any([text.strip() in subjects for text in texts]):
                 links = anchors.css("::attr(href)").getall()
+                threadName = texts[0].strip()
                 yield BaseItem(
-                    name=listName,
+                    name=threadName,
                     file_urls=[response.urljoin(link) for link in links],
                 )
