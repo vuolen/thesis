@@ -128,7 +128,7 @@ def openjdk_mailman2_mailing_lists(id: str):
 def python_mailman3_mailing_lists(id: str):
     item = get_item_by_id("python-mailman3-mailing-lists", id)
     if item:
-        ui.navigate.to(item["file_urls"][0])
+        ui.navigate.to(f"https://mail.python.org{item["url"]}")
     else:
         ui.label("Item not found")
 
