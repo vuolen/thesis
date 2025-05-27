@@ -11,7 +11,7 @@ async def ripgrepAll(file, stdin=None):
 
     matches = {}
     for pattern in patterns:
-        stdout, stderr = await command.run_command(f"rga -iF --count-matches -f {os.path.join(PATTERN_DIR, pattern)} {file}", stdin=stdin, non_error_codes=[0, 1])
+        stdout, stderr = await command.run_command(f"rga -iF --count-matches --rga-cache-path=/tmp/thesis-scraper/.cache -f {os.path.join(PATTERN_DIR, pattern)} {file}", stdin=stdin, non_error_codes=[0, 1])
         if not stderr == b"":
             raise Exception(f"Error running ripgrep: {stderr}")
         else:
