@@ -35,26 +35,48 @@ async def parse_items(items, parser_name):
 @task
 async def annotate_documents(documents):
     logger = get_run_logger()
+    documents_queue = asyncio.Queue()
+    annotated_documents_queue = asyncio.Queue()
+
+    async def task():
+        while True:
+            document = await documents_queue.get()
+            document_matches = {}
+            for file in document["files"]:
+                try:
+                    if "stdin" in file:
+                        file_matches = await ripgrepAll("-", stdin=file["stdin"])
+                    elif "path" in file:
+                        fullPath = os.path.join(env.FILES_DIR, file["path"])
+                        file_matches = await ripgrepAll(fullPath)
+
+                    for k,v in file_matches.items():
+                        document_matches[k] = document_matches.get(k, 0) + v
+
+                except Exception as e:
+                    logger.error(f"Error processing file {file.get('path', file.get('stdin'))} from document {document}")
+                    logger.error(e)
+            
+            document["matches"] = document_matches
+            await annotated_documents_queue.put(document)
+            documents_queue.task_done()
+
+
     for document in documents:
-        document_matches = {}
-        for file in document["files"]:
-            try:
-                if "stdin" in file:
-                    file_matches = await ripgrepAll("-", stdin=file["stdin"])
-                elif "path" in file:
-                    fullPath = os.path.join(env.FILES_DIR, file["path"])
-                    file_matches = await ripgrepAll(fullPath)
+        documents_queue.put_nowait(document)
 
-                for k,v in file_matches.items():
-                    document_matches[k] = document_matches.get(k, 0) + v
+    tasks = [asyncio.create_task(task()) for _ in range(10)]
 
-            except Exception as e:
-                logger.error(f"Error processing file {file.get('path', file.get('stdin'))} from document {document}")
-                logger.error(e)
-        
-        document["matches"] = document_matches
+    await documents_queue.join()
 
-    return documents
+    for t in tasks:
+        t.cancel()
+
+    annotated_documents = []
+    while not annotated_documents_queue.empty():
+        annotated_documents.append(await annotated_documents_queue.get())
+
+    return annotated_documents
  
 @task
 def filter_documents(documents):
