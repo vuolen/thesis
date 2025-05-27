@@ -116,6 +116,22 @@ def python_discuss(id: str):
     else:
         ui.label("Item not found")
 
+@ui.page('/openjdk-mailman2-mailing-lists/{id}')
+def openjdk_mailman2_mailing_lists(id: str):
+    item = get_item_by_id("openjdk-mailman2-mailing-lists", id)
+    if item:
+        ui.navigate.to(item["file_urls"][0])
+    else:
+        ui.label("Item not found")
+
+@ui.page('/python-mailman3-mailing-lists/{id}')
+def python_mailman3_mailing_lists(id: str):
+    item = get_item_by_id("python-mailman3-mailing-lists", id)
+    if item:
+        ui.navigate.to(item["file_urls"][0])
+    else:
+        ui.label("Item not found")
+
 app.add_static_files('/files', FILES_DIR)
 
 ui.run()
