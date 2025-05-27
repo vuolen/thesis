@@ -18,7 +18,7 @@ async def to_documents(items):
             "name": messages[0]["name"],
             "files": [
                 {
-                    "path": message["file"]["path"],
+                    "path": message["files"][0]["path"],
                 }
                 for message in messages
             ],
