@@ -68,7 +68,6 @@ async def annotate_documents(documents):
             finally:
                 documents_queue.task_done()
 
-
     for document in documents:
         documents_queue.put_nowait(document)
 

@@ -18,13 +18,13 @@ async def to_documents(items):
             "id": messages[0]["id"],
             "name": messages[0]["name"],
             "url": threadLink,
-            # "file_urls": [message["file_urls"][0] for message in messages],
-            # "files": [
-            #     {
-            #         "path": message["files"][0]["path"],
-            #     }
-            #     for message in messages
-            # ],
+            "file_urls": [message["file_urls"][0] for message in messages],
+            "files": [
+                {
+                    "path": message["files"][0]["path"],
+                }
+                for message in messages
+            ],
         })
 
     return documents
