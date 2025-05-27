@@ -1,13 +1,15 @@
 from prefect import task
-from itertools import groupby
+from collections import defaultdict
 
 @task
 async def to_documents(items):
-    threads = groupby(items, key=lambda x: x["scraped_from"]["threadLink"])
+    threads = defaultdict(list) 
+
+    for item in items:
+        threads[item["scraped_from"]["threadLink"]].append(item)
 
     documents = []
-
-    for _,messages in threads.items():
+    for threadLink, messages in threads.items(): 
         documents.append({
             "name": messages[0]["name"],
             "files": [
