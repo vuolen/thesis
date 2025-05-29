@@ -1,5 +1,2 @@
-lambda expression
-lambda function
+lambda
 anonymous function
-inline function
-lambda syntax
