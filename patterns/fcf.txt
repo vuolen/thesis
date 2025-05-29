@@ -1,2 +1,0 @@
-first class function
-first-class function
