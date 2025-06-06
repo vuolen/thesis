@@ -15,7 +15,7 @@ class PythonMailman3MailingListsSpider(scrapy.Spider):
     }
 
     def list_predicate(self, listName):
-        lowered = listName.lower()
+        lowered = listName.lower().split("@")[0]
         if lowered.endswith("changes") or lowered.endswith("commits") or lowered.endswith("checkins") or lowered == "python-list":
             return False
         return True
